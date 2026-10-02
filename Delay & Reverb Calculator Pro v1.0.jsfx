@@ -1,0 +1,2362 @@
+desc: Delay & Reverb Calculator Pro v1.0
+
+slider1:120<20,300,0.01>-BPM
+slider2:0<0,2,1{ms,s,Hz}>-Display Unit
+slider3:0<0,1,1{Manual,Sync}>-Tempo Sync Mode
+slider4:0<0,3,1{Charcoal,Emerald,Graphite,Ocean}>-Color Theme
+slider5:0<0,2,1{Reverb,Notes,DelayTail}>-Active Tab
+slider6:2<0,3,1{-40,-50,-60,-70}>-Threshold
+slider7:0<0,2,1{Ideal,Mild,Strong}>-Damping Profile
+slider8:4<1,16,1>-Time Sig Numerator
+slider9:4<1,16,1>-Time Sig Denominator
+
+@init
+ext_noinit = 1;
+
+bpm = 120; manual_bpm = 120; edit_bpm = 0; sync_mode = 0; theme = 0; got_slider = 0;
+active_tab = 0; scroll_y = 0; prev_wheel = 0;
+show_ts_menu = 0; show_custom_menu = 0; show_help = 0;
+help_lang = 0; help_scroll = 0; help_wheel = 0;
+cur_ts_num = 4; cur_ts_den = 4; manual_ts_num = 4; manual_ts_den = 4; edit_ts = 0;
+
+fb_mode = 0; fb_damping_mode = 0; fb_delay_ms = 375; fb_feedback_pct = 50;
+fb_tail_target = 3.0; fb_threshold = -60; fb_threshold_idx = 2; fb_edit_field = 0;
+fb_calc_tail = 0; fb_calc_repeats = 0; fb_calc_feedback = 0; fb_db_val = 0;
+tail_beats = 0; tail_bars = 0; last_rep = 0;
+
+focus_lockout = 0; prev_hasfocus = 1;
+
+base_w = 785; base_h = 670; scale = 1;
+bg_r = 0.025; bg_g = 0.035; bg_b = 0.030;
+panel_r = 0.078; panel_g = 0.105; panel_b = 0.092;
+line_r = 0.160; line_g = 0.220; line_b = 0.190;
+text_r = 0.840; text_g = 0.880; text_b = 0.850;
+muted_r = 0.460; muted_g = 0.520; muted_b = 0.490;
+accent_r = 0.450; accent_g = 0.780; accent_b = 0.570;
+accent_hi_r = 0.620; accent_hi_g = 0.920; accent_b_hi = 0.700;
+
+tap_i0 = 0; tap_i1 = 0; tap_i2 = 0; tap_i3 = 0; tap_i4 = 0; tap_i5 = 0; tap_n = 0;
+fbn_best_row = 0; fbn_best_col = 0; fbn_best_ms = 0;
+fbn_best_diff = 0; fbn_best_mult = 0; custom_ms = 0;
+
+reverb_pre[0] = 1/16; reverb_pre[1] = 1/32; reverb_pre[2] = 1/32;
+reverb_pre[3] = 1/64; reverb_pre[4] = 1/128; reverb_pre[5] = 1/256;
+reverb_pre[6] = 1/512; reverb_pre[7] = 1/1024; reverb_pre[8] = 1/2048;
+reverb_bars[0] = 4; reverb_bars[1] = 3; reverb_bars[2] = 2;
+reverb_bars[3] = 1; reverb_bars[4] = 3/4; reverb_bars[5] = 1/2;
+reverb_bars[6] = 3/8; reverb_bars[7] = 1/4; reverb_bars[8] = 1/8;
+
+#bpm_string = ""; #bpm_display = ""; #digit = ""; #tmp = ""; #out = "";
+#unit_text = ""; #ts = ""; #ts_info = "";
+#ts_num_str = ""; #ts_den_str = "";
+#ts_num_digit = ""; #ts_den_digit = "";
+#ts_num_tmp = ""; #ts_den_tmp = "";
+#theme_name = "";
+#n1 = ""; #n2 = ""; #n3 = "";
+#r1 = ""; #r2 = ""; #r3 = "";
+#bars_label = ""; #tap_label = ""; #taps_count = "";
+#custom_string = ""; #custom_digit = ""; #custom_tmp = "";
+#note_name = ""; #note_base = ""; #note_suffix = "";
+#fb_buf = ""; #fb_tmp = ""; #fb_out = "";
+#str_tmp = "";
+#help_lang_label = "";
+#help_close = "";
+
+tap_last = 0; last_mouse_cap = 0; last_mid_cap = 0; last_right_cap = 0; unit = 0;
+
+qr_size = 25;
+qr_rows[0]  = 0x1FD267F;
+qr_rows[1]  = 0x1055141;
+qr_rows[2]  = 0x175D65D;
+qr_rows[3]  = 0x175CD5D;
+qr_rows[4]  = 0x174AB5D;
+qr_rows[5]  = 0x105C141;
+qr_rows[6]  = 0x1FD557F;
+qr_rows[7]  = 0x0007000;
+qr_rows[8]  = 0x19C422F;
+qr_rows[9]  = 0x082271A;
+qr_rows[10] = 0x1B6F27C;
+qr_rows[11] = 0x1099556;
+qr_rows[12] = 0x1D6306F;
+qr_rows[13] = 0x1096B12;
+qr_rows[14] = 0x03E777C;
+qr_rows[15] = 0x06A8036;
+qr_rows[16] = 0x1B443FC;
+qr_rows[17] = 0x0016D10;
+qr_rows[18] = 0x1FC3150;
+qr_rows[19] = 0x105271F;
+qr_rows[20] = 0x17531FE;
+qr_rows[21] = 0x174E6E7;
+qr_rows[22] = 0x174F6CA;
+qr_rows[23] = 0x105223E;
+qr_rows[24] = 0x1FDF207;
+
+hover_tap = 0; hover_ms = 0; hover_s = 0; hover_hz = 0;
+hover_ts = 0; hover_sync = 0; hover_theme = 0; hover_help = 0;
+hover_tab1 = 0; hover_tab2 = 0; hover_tab3 = 0;
+hover_custom = 0; tap_press = 0;
+hover_fb_delay = 0; hover_fb_input = 0;
+hover_fb_mode0 = 0; hover_fb_mode1 = 0;
+hover_thr40 = 0; hover_thr50 = 0; hover_thr60 = 0; hover_thr70 = 0;
+hover_dmp0 = 0; hover_dmp1 = 0; hover_dmp2 = 0;
+hover_help_lang = 0; hover_help_close = 0;
+
+function apply_theme()
+(
+  theme == 0 ? (
+    bg_r = 0.180; bg_g = 0.190; bg_b = 0.200;
+    panel_r = 0.120; panel_g = 0.130; panel_b = 0.140;
+    line_r = 0.280; line_g = 0.300; line_b = 0.320;
+    text_r = 0.900; text_g = 0.920; text_b = 0.930;
+    muted_r = 0.560; muted_g = 0.590; muted_b = 0.610;
+    accent_r = 0.380; accent_g = 0.820; accent_b = 0.680;
+    accent_hi_r = 0.560; accent_hi_g = 0.960; accent_b_hi = 0.830;
+    #theme_name = "Charcoal";
+  );
+  theme == 1 ? (
+    bg_r = 0.025; bg_g = 0.040; bg_b = 0.033;
+    panel_r = 0.078; panel_g = 0.105; panel_b = 0.092;
+    line_r = 0.160; line_g = 0.220; line_b = 0.190;
+    text_r = 0.840; text_g = 0.880; text_b = 0.850;
+    muted_r = 0.460; muted_g = 0.520; muted_b = 0.490;
+    accent_r = 0.450; accent_g = 0.780; accent_b = 0.570;
+    accent_hi_r = 0.620; accent_hi_g = 0.920; accent_b_hi = 0.700;
+    #theme_name = "Emerald";
+  );
+  theme == 2 ? (
+    bg_r = 0.030; bg_g = 0.033; bg_b = 0.045;
+    panel_r = 0.090; panel_g = 0.100; panel_b = 0.120;
+    line_r = 0.170; line_g = 0.190; line_b = 0.230;
+    text_r = 0.850; text_g = 0.880; text_b = 0.920;
+    muted_r = 0.480; muted_g = 0.510; muted_b = 0.560;
+    accent_r = 0.380; accent_g = 0.650; accent_b = 0.980;
+    accent_hi_r = 0.580; accent_hi_g = 0.800; accent_b_hi = 1.000;
+    #theme_name = "Graphite";
+  );
+  theme == 3 ? (
+    bg_r = 0.015; bg_g = 0.035; bg_b = 0.065;
+    panel_r = 0.035; panel_g = 0.075; panel_b = 0.130;
+    line_r = 0.090; line_g = 0.170; line_b = 0.280;
+    text_r = 0.820; text_g = 0.900; text_b = 0.950;
+    muted_r = 0.460; muted_g = 0.580; muted_b = 0.660;
+    accent_r = 0.280; accent_g = 0.680; accent_b = 0.950;
+    accent_hi_r = 0.480; accent_hi_g = 0.830; accent_b_hi = 1.000;
+    #theme_name = "Ocean";
+  );
+);
+apply_theme();
+
+function draw_kofi_qr(start_x, start_y, module_size)
+(
+  quiet_zone = 4;
+  total_modules = qr_size + quiet_zone*2;
+  px = module_size;
+  // solid white background with quiet zone
+  gfx_a = 1; gfx_r = 1; gfx_g = 1; gfx_b = 1;
+  bx = floor(offset_x + (start_x - quiet_zone*px)*scale);
+  by = floor(offset_y + (start_y - quiet_zone*px)*scale);
+  bw = floor(total_modules*px*scale) + 2;
+  bh = floor(total_modules*px*scale) + 2;
+  gfx_rect(bx, by, bw, bh, 1);
+
+  // draw modules with slight overlap to eliminate gaps at fractional scale
+  gfx_r = 0; gfx_g = 0; gfx_b = 0;
+  r = 0;
+  loop(qr_size,
+    mask = qr_rows[r];
+    c = 0;
+    loop(qr_size,
+      ((mask >> (qr_size - 1 - c)) & 1) ? (
+        mx = floor(offset_x + (start_x + c*px)*scale);
+        my = floor(offset_y + (start_y + r*px)*scale);
+        mw = floor((c+1)*px*scale) - floor(c*px*scale) + 1;
+        mh = floor((r+1)*px*scale) - floor(r*px*scale) + 1;
+        gfx_rect(mx, my, mw, mh, 1);
+      );
+      c += 1;
+    );
+    r += 1;
+  );
+);
+
+function format_time(value)
+(
+  unit == 0 ? (sprintf(#out, "%.2f", value););
+  unit == 1 ? (sprintf(#out, "%.3f", value/1000););
+  unit == 2 ? (value > 0 ? sprintf(#out, "%.3f", 1000/value) : sprintf(#out, "0.000"););
+);
+
+function unit_name()
+(
+  unit == 0 ? (#unit_text = "ms") :
+  unit == 1 ? (#unit_text = "s") :
+              (#unit_text = "Hz");
+);
+
+function set_font(size)
+(
+  sz = floor(size*scale);
+  sz < 8 ? sz = 8;
+  gfx_setfont(1, "Arial", sz);
+);
+
+function draw_rrect(x, y, w, h, r)
+(
+  x = floor(offset_x + x*scale);
+  y = floor(offset_y + y*scale);
+  w = floor(w*scale);
+  h = floor(h*scale);
+  r = floor(r*scale);
+  r < 1 ? (
+    gfx_rect(x, y, w, h, 1);
+  ) : (
+    gfx_rect(x+r, y, w-2*r, h, 1);
+    gfx_rect(x, y+r, r, h-2*r, 1);
+    gfx_rect(x+w-r, y+r, r, h-2*r, 1);
+    gfx_circle(x+r, y+r, r, 1);
+    gfx_circle(x+w-r-1, y+r, r, 1);
+    gfx_circle(x+r, y+h-r-1, r, 1);
+    gfx_circle(x+w-r-1, y+h-r-1, r, 1);
+  );
+);
+
+function draw_bevel(x, y, w, h, inset)
+(
+  ix = x + inset;
+  iw = w - 2*inset;
+  gfx_a = 0.12; gfx_r = 1; gfx_g = 1; gfx_b = 1;
+  gfx_rect(floor(offset_x+ix*scale), floor(offset_y+(y+1)*scale), floor(iw*scale), 1, 1);
+  gfx_a = 0.30; gfx_r = 0; gfx_g = 0; gfx_b = 0;
+  gfx_rect(floor(offset_x+ix*scale), floor(offset_y+(y+h-2)*scale), floor(iw*scale), 1, 1);
+  gfx_a = 1;
+);
+
+function panel(x, y, w, h)
+(
+  gfx_a = 0.10; gfx_r = 0; gfx_g = 0; gfx_b = 0; draw_rrect(x, y+3, w, h, 10);
+  gfx_a = 0.05; draw_rrect(x-1, y+5, w+2, h+2, 12);
+  gfx_a = 1; gfx_r = panel_r; gfx_g = panel_g; gfx_b = panel_b; draw_rrect(x, y, w, h, 10);
+  gfx_r = 1; gfx_g = 1; gfx_b = 1; gfx_a = 0.10;
+  gfx_rect(floor(offset_x+(x+12)*scale), floor(offset_y+(y+1)*scale), floor((w-24)*scale), 1, 1);
+  gfx_a = 1; gfx_r = 0; gfx_g = 0; gfx_b = 0; gfx_a = 0.18;
+  gfx_rect(floor(offset_x+(x+12)*scale), floor(offset_y+(y+h-1)*scale), floor((w-24)*scale), 1, 1);
+  gfx_a = 1;
+);
+
+function text_left(x, y, txt, size)
+(
+  gfx_a = 1; gfx_r = text_r; gfx_g = text_g; gfx_b = text_b; set_font(size);
+  gfx_x = floor(offset_x + x*scale);
+  gfx_y = floor(offset_y + y*scale);
+  gfx_drawstr(txt);
+);
+
+function text_muted(x, y, txt, size)
+(
+  gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b; set_font(size);
+  gfx_x = floor(offset_x + x*scale);
+  gfx_y = floor(offset_y + y*scale);
+  gfx_drawstr(txt);
+);
+
+function text_center(x, y, w, h, txt, size)
+(
+  gfx_a = 1; set_font(size); gfx_measurestr(txt, tw, th);
+  gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+  gfx_x = floor(offset_x + (x+w/2)*scale - tw/2);
+  gfx_y = floor(offset_y + (y+h/2)*scale - th/2);
+  gfx_drawstr(txt);
+);
+
+function text_center_c(x, y, w, h, txt, size, cr, cg, cb)
+(
+  gfx_a = 1; set_font(size); gfx_measurestr(txt, tw, th);
+  gfx_r = cr; gfx_g = cg; gfx_b = cb;
+  gfx_x = floor(offset_x + (x+w/2)*scale - tw/2);
+  gfx_y = floor(offset_y + (y+h/2)*scale - th/2);
+  gfx_drawstr(txt);
+);
+
+function cell_label(x, y, w, h, txt, highlight)
+(
+  gfx_a = 1; gfx_r = panel_r*0.7; gfx_g = panel_g*0.7; gfx_b = panel_b*0.7;
+  gfx_rect(floor(offset_x+x*scale), floor(offset_y+y*scale), floor(w*scale), floor(h*scale), 1);
+  highlight ? (
+    gfx_a = 1; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+    gfx_rect(floor(offset_x+x*scale), floor(offset_y+y*scale), floor(w*scale), floor(h*scale), 1);
+  );
+  gfx_a = 1; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+  gfx_rect(floor(offset_x+x*scale), floor(offset_y+y*scale), floor(w*scale), floor(h*scale), 0);
+  set_font(17); gfx_a = 1; gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+  gfx_measurestr(txt, tw, th);
+  gfx_x = floor(offset_x + (x+w/2)*scale - tw/2);
+  gfx_y = floor(offset_y + (y+h/2)*scale - th/2);
+  gfx_drawstr(txt);
+);
+
+function cell_value(x, y, w, h, val_str, unit_str, highlight)
+(
+  gfx_a = 1; gfx_r = panel_r*0.7; gfx_g = panel_g*0.7; gfx_b = panel_b*0.7;
+  gfx_rect(floor(offset_x+x*scale), floor(offset_y+y*scale), floor(w*scale), floor(h*scale), 1);
+  highlight ? (
+    gfx_a = 1; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+    gfx_rect(floor(offset_x+x*scale), floor(offset_y+y*scale), floor(w*scale), floor(h*scale), 1);
+  );
+  gfx_a = 1; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+  gfx_rect(floor(offset_x+x*scale), floor(offset_y+y*scale), floor(w*scale), floor(h*scale), 0);
+
+  u_len = strlen(unit_str);
+
+  u_len > 0 ? (
+    set_font(17); gfx_measurestr(val_str, tw, th);
+    set_font(12); gfx_measurestr(unit_str, tw_u, th_u);
+    gap = 5;
+    total_w = tw + gap*scale + tw_u;
+    start_x = floor(offset_x + (x + w/2)*scale - total_w/2);
+    val_y = floor(offset_y + (y + h/2)*scale - th/2);
+
+    set_font(17); gfx_a = 1; gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+    gfx_x = start_x; gfx_y = val_y;
+    gfx_drawstr(val_str);
+
+    set_font(12); gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+    gfx_x = floor(start_x + tw + gap*scale);
+    gfx_y = val_y + (th - th_u);
+    gfx_drawstr(unit_str);
+  ) : (
+    set_font(17); gfx_a = 1; gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+    gfx_measurestr(val_str, tw, th);
+    gfx_x = floor(offset_x + (x + w/2)*scale - tw/2);
+    gfx_y = floor(offset_y + (y + h/2)*scale - th/2);
+    gfx_drawstr(val_str);
+  );
+);
+
+function header_cell(x, y, w, h, txt)
+(
+  gfx_a = 1; gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;
+  gfx_rect(floor(offset_x+x*scale), floor(offset_y+y*scale), floor(w*scale), floor(h*scale), 1);
+  gfx_a = 1; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+  gfx_rect(floor(offset_x+x*scale), floor(offset_y+y*scale), floor(w*scale), floor(h*scale), 0);
+  set_font(14); gfx_a = 1; gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+  gfx_measurestr(txt, tw, th);
+  gfx_x = floor(offset_x + (x+w/2)*scale - tw/2);
+  gfx_y = floor(offset_y + (y+h/2)*scale - th/2);
+  gfx_drawstr(txt);
+);
+
+function note_row(y, label, normal, dotted, triplet, zebra)
+(
+  format_time(normal);  #n1 = #out;
+  format_time(dotted);  #n2 = #out;
+  format_time(triplet); #n3 = #out;
+  unit_name();
+  cell_label(15, y, 125, 28, label, zebra);
+  cell_value(140, y, 210, 28, #n1, #unit_text, zebra);
+  cell_value(350, y, 210, 28, #n2, #unit_text, zebra);
+  cell_value(560, y, 210, 28, #n3, #unit_text, zebra);
+);
+
+function reverb_row(y, name, pre_factor, bars, zebra)
+(
+  quarter = 60000/bpm;
+  bar_q = cur_ts_num*4/cur_ts_den;
+  bar_ms = quarter*bar_q;
+  total = bar_ms*bars;
+  pre = quarter*(pre_factor*4);
+  decay = total - pre;
+
+  format_time(pre);   #r1 = #out;
+  format_time(decay); #r2 = #out;
+  format_time(total); #r3 = #out;
+  unit_name();
+
+  bars == 4     ? (#bars_label = "4 bars")   :
+  bars == 3     ? (#bars_label = "3 bars")   :
+  bars == 2     ? (#bars_label = "2 bars")   :
+  bars == 1     ? (#bars_label = "1 bar")    :
+  bars == 0.75  ? (#bars_label = "3/4 bar")  :
+  bars == 0.5   ? (#bars_label = "1/2 bar")  :
+  bars == 0.375 ? (#bars_label = "3/8 bar")  :
+  bars == 0.25  ? (#bars_label = "1/4 bar")  : (#bars_label = "1/8 bar");
+
+  cell_x = 15; cell_w = 200; cell_h = 30;
+
+  gfx_a = 1; gfx_r = panel_r*0.7; gfx_g = panel_g*0.7; gfx_b = panel_b*0.7;
+  gfx_rect(floor(offset_x+cell_x*scale), floor(offset_y+y*scale), floor(cell_w*scale), floor(cell_h*scale), 1);
+  zebra ? (
+    gfx_a = 1; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+    gfx_rect(floor(offset_x+cell_x*scale), floor(offset_y+y*scale), floor(cell_w*scale), floor(cell_h*scale), 1);
+  );
+  gfx_a = 1; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+  gfx_rect(floor(offset_x+cell_x*scale), floor(offset_y+y*scale), floor(cell_w*scale), floor(cell_h*scale), 0);
+
+  set_font(17); gfx_a = 1; gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+  gfx_measurestr(name, tw_name, th_name);
+  gfx_x = floor(offset_x + (cell_x + 10) * scale);
+  gfx_y = floor(offset_y + (y + cell_h/2) * scale - th_name/2);
+  gfx_drawstr(name);
+
+  set_font(12); gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+  gfx_measurestr(#bars_label, tw_bars, th_bars);
+  gfx_x = floor(offset_x + (cell_x + cell_w - 10) * scale - tw_bars);
+  gfx_y = floor(offset_y + (y + cell_h/2) * scale - th_bars/2);
+  gfx_drawstr(#bars_label);
+
+  cell_value(215, y, 175, cell_h, #r1, #unit_text, zebra);
+  cell_value(390, y, 190, cell_h, #r2, #unit_text, zebra);
+  cell_value(580, y, 190, cell_h, #r3, #unit_text, zebra);
+);
+
+function unit_button(x, y, w, h, is_active, is_hover, label)
+(
+  gfx_a = 1;
+  is_active ? (
+    gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b; draw_rrect(x, y, w, h, 8);
+    gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.35;
+    gfx_rect(floor(offset_x+(x+6)*scale), floor(offset_y+(y+2)*scale), floor((w-12)*scale), 1, 1);
+    gfx_a = 1;
+  ) : (
+    is_hover ? (
+      gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+    ) : (
+      gfx_r = panel_r*1.5; gfx_g = panel_g*1.5; gfx_b = panel_b*1.5;
+    );
+    draw_rrect(x, y, w, h, 8);
+    draw_bevel(x, y, w, h, 6);
+  );
+  set_font(17); gfx_measurestr(label, tw, th); gfx_a = 1;
+  is_active ? (gfx_r = 0.05; gfx_g = 0.05; gfx_b = 0.05;) : (gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;);
+  gfx_x = floor(offset_x + (x+w/2)*scale - tw/2);
+  gfx_y = floor(offset_y + (y+h/2)*scale - th/2);
+  gfx_drawstr(label);
+);
+
+function ts_preset_btn(x, y, w, h, pnum, pden, pname, is_active)
+(
+  gfx_a = 1;
+  is_active ? (
+    gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b; draw_rrect(x, y, w, h, 6);
+    sprintf(#ts_info, "%d/%d", pnum, pden);
+    text_center_c(x, y, w, h/2, #ts_info, 18, 0.05, 0.05, 0.05);
+    text_center_c(x, y+h/2, w, h/2, pname, 11, 0.05, 0.05, 0.05);
+  ) : (
+    gfx_r = panel_r*1.5; gfx_g = panel_g*1.5; gfx_b = panel_b*1.5; draw_rrect(x, y, w, h, 6);
+    draw_bevel(x, y, w, h, 6);
+    sprintf(#ts_info, "%d/%d", pnum, pden);
+    text_center(x, y, w, h/2, #ts_info, 18);
+    text_center(x, y+h/2, w, h/2, pname, 11);
+  );
+);
+
+function find_best_note(target)
+(
+  fbn_q = 60000/bpm;
+  fbn_best_diff = 9999999;
+  fbn_best_row = 0; fbn_best_col = 0; fbn_best_ms = 0; fbn_best_mult = 0;
+  fbn_idx = 0;
+  while (fbn_idx < 30) (
+    fbn_row = floor(fbn_idx/3);
+    fbn_col = fbn_idx % 3;
+    fbn_base = fbn_row == 0 ? 4 : fbn_row == 1 ? 2 : fbn_row == 2 ? 1 : fbn_row == 3 ? 0.5 :
+               fbn_row == 4 ? 0.25 : fbn_row == 5 ? 0.125 : fbn_row == 6 ? 0.0625 :
+               fbn_row == 7 ? 0.03125 : fbn_row == 8 ? 0.015625 : 0.0078125;
+    fbn_mult = fbn_col == 0 ? 1 : fbn_col == 1 ? 1.5 : 0.6666667;
+    fbn_full_mult = fbn_base*fbn_mult;
+    fbn_ms = fbn_q*fbn_full_mult;
+    fbn_d = abs(fbn_ms - target);
+    fbn_d < fbn_best_diff ? (
+      fbn_best_diff = fbn_d;
+      fbn_best_row = fbn_row;
+      fbn_best_col = fbn_col;
+      fbn_best_ms = fbn_ms;
+      fbn_best_mult = fbn_full_mult;
+    );
+    fbn_idx += 1;
+  );
+);
+
+function build_note_name(row, col)
+(
+  row == 0 ? (#note_base = "1") :
+  row == 1 ? (#note_base = "1/2") :
+  row == 2 ? (#note_base = "1/4") :
+  row == 3 ? (#note_base = "1/8") :
+  row == 4 ? (#note_base = "1/16") :
+  row == 5 ? (#note_base = "1/32") :
+  row == 6 ? (#note_base = "1/64") :
+  row == 7 ? (#note_base = "1/128") :
+  row == 8 ? (#note_base = "1/256") :
+             (#note_base = "1/512");
+  col == 0 ? (#note_suffix = "") :
+  col == 1 ? (#note_suffix = " dotted") :
+             (#note_suffix = " triplet");
+  strcpy(#note_name, #note_base);
+  strcat(#note_name, #note_suffix);
+);
+
+function calc_feedback_tail()
+(
+  fb_delay_ms < 1 ? fb_delay_ms = 1;
+  fb_feedback_pct < 0.1 ? fb_feedback_pct = 0.1;
+  fb_feedback_pct > 99.9 ? fb_feedback_pct = 99.9;
+  fb_tail_target < 0.01 ? fb_tail_target = 0.01;
+
+  damping = fb_damping_mode == 0 ? 1.0 : fb_damping_mode == 1 ? 0.85 : 0.70;
+
+  fb_mode == 0 ? (
+    fb_factor = fb_feedback_pct/100;
+    denom = 20*(log(fb_factor)/log(10));
+    denom != 0 ? (
+      reps_pure = fb_threshold/denom;
+      reps_pure < 1 ? reps_pure = 1;
+      fb_calc_repeats = reps_pure*damping;
+      fb_calc_tail = (fb_calc_repeats*fb_delay_ms)/1000;
+      fb_calc_feedback = fb_feedback_pct;
+    );
+  ) : (
+    reps_target = (fb_tail_target*1000)/fb_delay_ms;
+    reps_target < 1 ? reps_target = 1;
+    fb_calc_repeats = reps_target;
+    reps_pure = reps_target/damping;
+    reps_pure < 1 ? reps_pure = 1;
+    fb_factor_calc = pow(10, fb_threshold/(20*reps_pure));
+    fb_calc_feedback = fb_factor_calc*100;
+    fb_calc_feedback > 99.9 ? fb_calc_feedback = 99.9;
+    fb_calc_tail = fb_tail_target;
+  );
+
+  fb_calc_feedback > 0.1 ? (
+    fb_db_val = 20*(log(fb_calc_feedback/100)/log(10));
+  ) : (
+    fb_db_val = -99.9;
+  );
+
+  bar_q = cur_ts_num * 4 / cur_ts_den;
+  tail_beats = (fb_calc_tail * bpm) / 60;
+  bar_q > 0 ? (tail_bars = tail_beats / bar_q;) : (tail_bars = 0;);
+
+  last_rep = floor(fb_calc_repeats);
+  last_rep < 1 ? last_rep = 1;
+);
+
+@slider
+sync_mode = slider3;
+theme = slider4;
+apply_theme();
+unit = slider2;
+
+active_tab = floor(slider5);
+active_tab < 0 ? active_tab = 0;
+active_tab > 2 ? active_tab = 2;
+
+fb_threshold_idx = floor(slider6);
+fb_threshold_idx < 0 ? fb_threshold_idx = 0;
+fb_threshold_idx > 3 ? fb_threshold_idx = 3;
+fb_threshold_idx == 0 ? fb_threshold = -40 :
+fb_threshold_idx == 1 ? fb_threshold = -50 :
+fb_threshold_idx == 2 ? fb_threshold = -60 : fb_threshold = -70;
+
+!sync_mode && !edit_bpm ? (
+  manual_bpm = slider1;
+  bpm = slider1;
+) : (
+  got_slider == 0 ? (
+    got_slider = 1;
+    manual_bpm = slider1;
+    bpm = slider1;
+  );
+);
+
+fb_damping_mode = floor(slider7);
+fb_damping_mode < 0 ? fb_damping_mode = 0;
+fb_damping_mode > 2 ? fb_damping_mode = 2;
+
+manual_ts_num = floor(slider8);
+manual_ts_num < 1 ? manual_ts_num = 1;
+manual_ts_num > 16 ? manual_ts_num = 16;
+
+manual_ts_den = floor(slider9);
+manual_ts_den < 1 ? manual_ts_den = 1;
+manual_ts_den > 16 ? manual_ts_den = 16;
+
+!sync_mode ? (
+  cur_ts_num = manual_ts_num;
+  cur_ts_den = manual_ts_den;
+);
+
+@block
+sync_mode ? (
+  tempo > 0 ? (
+    bpm = tempo;
+    slider1 = tempo;
+  );
+  ts_num > 0 && ts_denom > 0 ? (cur_ts_num = ts_num; cur_ts_den = ts_denom;);
+) : (
+  bpm = manual_bpm;
+  cur_ts_num = manual_ts_num;
+  cur_ts_den = manual_ts_den;
+);
+
+cur_ts_num < 1 ? cur_ts_num = 1;
+cur_ts_num > 16 ? cur_ts_num = 16;
+cur_ts_den < 1 ? cur_ts_den = 1;
+cur_ts_den > 16 ? cur_ts_den = 16;
+bpm < 20 ? bpm = 20;
+bpm > 300 ? bpm = 300;
+
+calc_feedback_tail();
+
+@gfx 785 670
+gfx_ext_retina = 1;
+sx = gfx_w / base_w;
+sy = gfx_h / base_h;
+scale = sx < sy ? sx : sy;
+scale < 0.2 ? scale = 0.2;
+scale = floor(scale * 20) / 20;
+offset_x = floor((gfx_w - base_w*scale)/2);
+offset_y = floor((gfx_h - base_h*scale)/2);
+mx = (mouse_x - offset_x)/scale;
+my = (mouse_y - offset_y)/scale;
+
+gfx_a = 1; gfx_r = bg_r; gfx_g = bg_g; gfx_b = bg_b;
+gfx_rect(0, 0, gfx_w, gfx_h, 1);
+
+current_time = time_precise();
+
+just_gained_focus = (gfx_hasfocus == 1 && prev_hasfocus == 0);
+just_lost_focus   = (gfx_hasfocus == 0 && prev_hasfocus == 1);
+prev_hasfocus = gfx_hasfocus;
+
+just_lost_focus ? (
+  edit_bpm = 0;
+  edit_ts = 0;
+  fb_edit_field = 0;
+  strcpy(#bpm_string, "");
+  strcpy(#fb_buf, "");
+);
+
+mouse_clicked = (mouse_cap & 1) && !(last_mouse_cap & 1);
+mouse_mid_clicked   = (mouse_cap & 4) && !(last_mid_cap & 4);
+mouse_right_clicked = (mouse_cap & 2) && !(last_right_cap & 2);
+last_mouse_cap = mouse_cap;
+last_mid_cap = mouse_cap;
+last_right_cap = mouse_cap;
+
+just_gained_focus ? (focus_lockout = current_time + 0.2;);
+(current_time < focus_lockout) ? (mouse_clicked = 0; mouse_mid_clicked = 0; mouse_right_clicked = 0;);
+
+hover_sync   = (mx >= 455 && mx <= 575 && my >= 18  && my <= 48);
+hover_theme  = (mx >= 585 && mx <= 690 && my >= 18  && my <= 48);
+hover_help   = (mx >= 700 && mx <= 770 && my >= 18  && my <= 48);
+hover_tab1   = (mx >= 15  && mx <= 260 && my >= 325 && my <= 357);
+hover_tab2   = (mx >= 270 && mx <= 515 && my >= 325 && my <= 357);
+hover_tab3   = (mx >= 525 && mx <= 770 && my >= 325 && my <= 357);
+hover_tap    = (mx >= 400 && mx <= 770 && my >= 75  && my <= 190);
+hover_ms     = (mx >= 20  && mx < 143  && my >= 255 && my <= 307);
+hover_s      = (mx >= 143 && mx < 266  && my >= 255 && my <= 307);
+hover_hz     = (mx >= 266 && mx <= 389 && my >= 255 && my <= 307);
+hover_ts     = (mx >= 400 && mx <= 770 && my >= 255 && my <= 307);
+hover_custom = (mx >= 15  && mx <= 770 && my >= 200 && my <= 248);
+tap_press    = (mouse_cap & 1) && hover_tap && !sync_mode;
+
+content_top = 354;
+active_tab == 2 ? content_bottom = 900 : content_bottom = 670;
+scroll_max = content_bottom - (gfx_h/scale);
+scroll_max < 0 ? scroll_max = 0;
+cur_wheel = mouse_wheel;
+wheel_delta = cur_wheel - prev_wheel;
+prev_wheel = cur_wheel;
+scroll_y -= wheel_delta * 30;
+scroll_y < 0 ? scroll_y = 0;
+scroll_y > scroll_max ? scroll_y = scroll_max;
+content_y = content_top - scroll_y;
+
+active_tab == 0 ? (
+  #str_tmp = "Reverb Size";  header_cell(15,  content_y, 200, 34, #str_tmp);
+  #str_tmp = "Pre-Delay";    header_cell(215, content_y, 175, 34, #str_tmp);
+  #str_tmp = "Decay Time";   header_cell(390, content_y, 190, 34, #str_tmp);
+  #str_tmp = "Reverb Time";  header_cell(580, content_y, 190, 34, #str_tmp);
+
+  #str_tmp = "Stadium";      reverb_row(content_y+34,  #str_tmp, 1/16,   4,     0);
+  #str_tmp = "Cathedral";    reverb_row(content_y+64,  #str_tmp, 1/32,   3,     1);
+  #str_tmp = "Hall";         reverb_row(content_y+94,  #str_tmp, 1/32,   2,     0);
+  #str_tmp = "Large Room";   reverb_row(content_y+124, #str_tmp, 1/64,   1,     1);
+  #str_tmp = "Medium Room";  reverb_row(content_y+154, #str_tmp, 1/128,  0.75,  0);
+  #str_tmp = "Small Room";   reverb_row(content_y+184, #str_tmp, 1/256,  0.5,   1);
+  #str_tmp = "Bathroom";     reverb_row(content_y+214, #str_tmp, 1/512,  0.375, 0);
+  #str_tmp = "Tight Echo";   reverb_row(content_y+244, #str_tmp, 1/1024, 0.25,  1);
+  #str_tmp = "Shoebox";      reverb_row(content_y+274, #str_tmp, 1/2048, 0.125, 0);
+) : active_tab == 1 ? (
+  #str_tmp = "Note";    header_cell(15,  content_y, 125, 32, #str_tmp);
+  #str_tmp = "Normal";  header_cell(140, content_y, 210, 32, #str_tmp);
+  #str_tmp = "Dotted";  header_cell(350, content_y, 210, 32, #str_tmp);
+  #str_tmp = "Triplet"; header_cell(560, content_y, 210, 32, #str_tmp);
+
+  unit_name();
+  text_muted(230, content_y+21, #unit_text, 9);
+  text_muted(440, content_y+21, #unit_text, 9);
+  text_muted(650, content_y+21, #unit_text, 9);
+
+  quarter = 60000/bpm;
+  #str_tmp = "1";     note_row(content_y+32,  #str_tmp, quarter*4,        quarter*6,        quarter*4*2/3,       0);
+  #str_tmp = "1/2";   note_row(content_y+60,  #str_tmp, quarter*2,        quarter*3,        quarter*2*2/3,       1);
+  #str_tmp = "1/4";   note_row(content_y+88,  #str_tmp, quarter,          quarter*1.5,      quarter*2/3,         0);
+  #str_tmp = "1/8";   note_row(content_y+116, #str_tmp, quarter*0.5,      quarter*0.75,     quarter/3,           1);
+  #str_tmp = "1/16";  note_row(content_y+144, #str_tmp, quarter*0.25,     quarter*0.375,    quarter/6,           0);
+  #str_tmp = "1/32";  note_row(content_y+172, #str_tmp, quarter*0.125,    quarter*0.1875,   quarter/12,          1);
+  #str_tmp = "1/64";  note_row(content_y+200, #str_tmp, quarter*0.0625,   quarter*0.09375,  quarter/24,          0);
+  #str_tmp = "1/128"; note_row(content_y+228, #str_tmp, quarter*0.03125,  quarter*0.046875, quarter/48,          1);
+  #str_tmp = "1/256"; note_row(content_y+256, #str_tmp, quarter*0.015625, quarter*0.0234375,quarter/96,          0);
+  #str_tmp = "1/512"; note_row(content_y+284, #str_tmp, quarter*0.0078125,quarter*0.01171875,quarter/192,        1);
+) : (
+  panel(15, content_y+10, 755, 55);
+  #str_tmp = "DELAY TIME"; text_muted(35, content_y+18, #str_tmp, 11);
+
+  hover_fb_delay = (my >= 354) && (mx >= 35 && mx <= 365 && my >= content_y+30 && my <= content_y+58);
+  gfx_a = 1;
+  (fb_edit_field == 1) ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) :
+  (hover_fb_delay ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;));
+  draw_rrect(35, content_y+30, 330, 26, 6);
+
+  fb_edit_field == 1 ? (
+    gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+    set_font(18); gfx_x = floor(offset_x+45*scale); gfx_y = floor(offset_y+(content_y+34)*scale);
+    gfx_drawstr(#fb_buf);
+    gfx_measurestr(#fb_buf, tw, th);
+    cur_on = ((floor(time_precise()*2)) % 2) == 0;
+    cur_on ? (
+      gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+      gfx_rect(floor(offset_x+45*scale+tw+2*scale), floor(offset_y+(content_y+34)*scale), 2, floor(20*scale), 1);
+    );
+  ) : (
+    sprintf(#fb_out, "%.2f ms", fb_delay_ms);
+    text_left(45, content_y+34, #fb_out, 18);
+  );
+  #str_tmp = "Tail = time until repeats fall below threshold";
+  text_muted(400, content_y+34, #str_tmp, 11);
+
+  panel(15, content_y+75, 755, 178);
+  #str_tmp = "MODE"; text_muted(35, content_y+85, #str_tmp, 11);
+
+  hover_fb_mode0 = (my >= 354) && (mx >= 35 && mx <= 200 && my >= content_y+98 && my <= content_y+124);
+  hover_fb_mode1 = (my >= 354) && (mx >= 210 && mx <= 375 && my >= content_y+98 && my <= content_y+124);
+
+  fb_mode == 0 ? (gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;) :
+                 (hover_fb_mode0 ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;));
+  draw_rrect(35, content_y+98, 165, 26, 6);
+  fb_mode == 0 ? (gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.35;
+                  gfx_rect(floor(offset_x+41*scale), floor(offset_y+content_y+100*scale), floor(153*scale), 1, 1); gfx_a = 1;)
+               : (draw_bevel(35, content_y+98, 165, 26, 4));
+  #str_tmp = "Feedback -> Tail";
+  fb_mode == 0 ? text_center_c(35, content_y+98, 165, 26, #str_tmp, 12, 0.05, 0.05, 0.05) :
+                 text_center(35, content_y+98, 165, 26, #str_tmp, 12);
+
+  fb_mode == 1 ? (gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;) :
+                 (hover_fb_mode1 ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;));
+  draw_rrect(210, content_y+98, 165, 26, 6);
+  fb_mode == 1 ? (gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.35;
+                  gfx_rect(floor(offset_x+216*scale), floor(offset_y+content_y+100*scale), floor(153*scale), 1, 1); gfx_a = 1;)
+               : (draw_bevel(210, content_y+98, 165, 26, 4));
+  #str_tmp = "Tail -> Feedback";
+  fb_mode == 1 ? text_center_c(210, content_y+98, 165, 26, #str_tmp, 12, 0.05, 0.05, 0.05) :
+                 text_center(210, content_y+98, 165, 26, #str_tmp, 12);
+
+  #str_tmp = "THRESHOLD"; text_muted(35, content_y+132, #str_tmp, 11);
+  th_y = content_y+145; thr_w = 90; thr_h = 22;
+
+  hover_thr40 = (my >= 354) && (mx >= 35  && mx <= 125 && my >= th_y && my <= th_y+thr_h);
+  hover_thr50 = (my >= 354) && (mx >= 135 && mx <= 225 && my >= th_y && my <= th_y+thr_h);
+  hover_thr60 = (my >= 354) && (mx >= 235 && mx <= 325 && my >= th_y && my <= th_y+thr_h);
+  hover_thr70 = (my >= 354) && (mx >= 335 && mx <= 425 && my >= th_y && my <= th_y+thr_h);
+
+  fb_threshold == -40 ? (gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;) : (hover_thr40 ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;));
+  draw_rrect(35, th_y, thr_w, thr_h, 5);
+  fb_threshold == -40 ? (gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.35;
+                         gfx_rect(floor(offset_x+41*scale), floor(offset_y+th_y+2*scale), floor((thr_w-12)*scale), 1, 1); gfx_a = 1;)
+                      : (draw_bevel(35, th_y, thr_w, thr_h, 4));
+  #str_tmp = "-40 dB"; fb_threshold == -40 ? text_center_c(35, th_y, thr_w, thr_h, #str_tmp, 12, 0.05, 0.05, 0.05) : text_center(35, th_y, thr_w, thr_h, #str_tmp, 12);
+
+  fb_threshold == -50 ? (gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;) : (hover_thr50 ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;));
+  draw_rrect(135, th_y, thr_w, thr_h, 5);
+  fb_threshold == -50 ? (gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.35;
+                         gfx_rect(floor(offset_x+141*scale), floor(offset_y+th_y+2*scale), floor((thr_w-12)*scale), 1, 1); gfx_a = 1;)
+                      : (draw_bevel(135, th_y, thr_w, thr_h, 4));
+  #str_tmp = "-50 dB"; fb_threshold == -50 ? text_center_c(135, th_y, thr_w, thr_h, #str_tmp, 12, 0.05, 0.05, 0.05) : text_center(135, th_y, thr_w, thr_h, #str_tmp, 12);
+
+  fb_threshold == -60 ? (gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;) : (hover_thr60 ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;));
+  draw_rrect(235, th_y, thr_w, thr_h, 5);
+  fb_threshold == -60 ? (gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.35;
+                         gfx_rect(floor(offset_x+241*scale), floor(offset_y+th_y+2*scale), floor((thr_w-12)*scale), 1, 1); gfx_a = 1;)
+                      : (draw_bevel(235, th_y, thr_w, thr_h, 4));
+  #str_tmp = "-60 dB"; fb_threshold == -60 ? text_center_c(235, th_y, thr_w, thr_h, #str_tmp, 12, 0.05, 0.05, 0.05) : text_center(235, th_y, thr_w, thr_h, #str_tmp, 12);
+
+  fb_threshold == -70 ? (gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;) : (hover_thr70 ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;));
+  draw_rrect(335, th_y, thr_w, thr_h, 5);
+  fb_threshold == -70 ? (gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.35;
+                         gfx_rect(floor(offset_x+341*scale), floor(offset_y+th_y+2*scale), floor((thr_w-12)*scale), 1, 1); gfx_a = 1;)
+                      : (draw_bevel(335, th_y, thr_w, thr_h, 4));
+  #str_tmp = "-70 dB"; fb_threshold == -70 ? text_center_c(335, th_y, thr_w, thr_h, #str_tmp, 12, 0.05, 0.05, 0.05) : text_center(335, th_y, thr_w, thr_h, #str_tmp, 12);
+
+  #str_tmp = "-60 dB approx 0.1% amplitude"; text_muted(450, th_y+6, #str_tmp, 11);
+
+  #str_tmp = "DAMPING PROFILE"; text_muted(35, content_y+175, #str_tmp, 11);
+  dp_y = content_y+188; dp_w = 180; dp_h = 22;
+
+  hover_dmp0 = (my >= 354) && (mx >= 35  && mx <= 215 && my >= dp_y && my <= dp_y+dp_h);
+  hover_dmp1 = (my >= 354) && (mx >= 225 && mx <= 405 && my >= dp_y && my <= dp_y+dp_h);
+  hover_dmp2 = (my >= 354) && (mx >= 415 && mx <= 595 && my >= dp_y && my <= dp_y+dp_h);
+
+  fb_damping_mode == 0 ? (gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;) : (hover_dmp0 ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;));
+  draw_rrect(35, dp_y, dp_w, dp_h, 5);
+  fb_damping_mode == 0 ? (gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.35;
+                          gfx_rect(floor(offset_x+41*scale), floor(offset_y+dp_y+2*scale), floor((dp_w-12)*scale), 1, 1); gfx_a = 1;)
+                       : (draw_bevel(35, dp_y, dp_w, dp_h, 4));
+  #str_tmp = "Ideal (x1.00)"; fb_damping_mode == 0 ? text_center_c(35, dp_y, dp_w, dp_h, #str_tmp, 12, 0.05, 0.05, 0.05) : text_center(35, dp_y, dp_w, dp_h, #str_tmp, 12);
+
+  fb_damping_mode == 1 ? (gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;) : (hover_dmp1 ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;));
+  draw_rrect(225, dp_y, dp_w, dp_h, 5);
+  fb_damping_mode == 1 ? (gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.35;
+                          gfx_rect(floor(offset_x+231*scale), floor(offset_y+dp_y+2*scale), floor((dp_w-12)*scale), 1, 1); gfx_a = 1;)
+                       : (draw_bevel(225, dp_y, dp_w, dp_h, 4));
+  #str_tmp = "Mild (x0.85)"; fb_damping_mode == 1 ? text_center_c(225, dp_y, dp_w, dp_h, #str_tmp, 12, 0.05, 0.05, 0.05) : text_center(225, dp_y, dp_w, dp_h, #str_tmp, 12);
+
+  fb_damping_mode == 2 ? (gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;) : (hover_dmp2 ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;));
+  draw_rrect(415, dp_y, dp_w, dp_h, 5);
+  fb_damping_mode == 2 ? (gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.35;
+                          gfx_rect(floor(offset_x+421*scale), floor(offset_y+dp_y+2*scale), floor((dp_w-12)*scale), 1, 1); gfx_a = 1;)
+                       : (draw_bevel(415, dp_y, dp_w, dp_h, 4));
+  #str_tmp = "Strong (x0.70)"; fb_damping_mode == 2 ? text_center_c(415, dp_y, dp_w, dp_h, #str_tmp, 12, 0.05, 0.05, 0.05) : text_center(415, dp_y, dp_w, dp_h, #str_tmp, 12);
+
+  #str_tmp = "Mild approx -15% tail. Strong approx -30% tail."; text_muted(35, content_y+218, #str_tmp, 10);
+  #str_tmp = "Heuristic correction, not a physical model."; text_muted(35, content_y+233, #str_tmp, 10);
+
+  panel(15, content_y+262, 755, 140);
+
+  fb_mode == 0 ? (
+    #str_tmp = "FEEDBACK"; text_muted(35, content_y+272, #str_tmp, 11);
+    hover_fb_input = (my >= 354) && (mx >= 35 && mx <= 285 && my >= content_y+285 && my <= content_y+315);
+    gfx_a = 1;
+    (fb_edit_field == 2) ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) :
+    (hover_fb_input ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;));
+    draw_rrect(35, content_y+285, 250, 30, 6);
+
+    fb_edit_field == 2 ? (
+      gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+      set_font(20); gfx_x = floor(offset_x+50*scale); gfx_y = floor(offset_y+(content_y+289)*scale);
+      gfx_drawstr(#fb_buf);
+      gfx_measurestr(#fb_buf, tw, th);
+      cur_on = ((floor(time_precise()*2)) % 2) == 0;
+      cur_on ? (
+        gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+        gfx_rect(floor(offset_x+50*scale+tw+2*scale), floor(offset_y+(content_y+289)*scale), 2, floor(22*scale), 1);
+      );
+    ) : (
+      sprintf(#fb_out, "%.2f %%", fb_feedback_pct);
+      text_left(50, content_y+289, #fb_out, 20);
+    );
+
+    sprintf(#fb_out, "TAIL TO %d dB", fb_threshold);
+    text_muted(320, content_y+272, #fb_out, 11);
+    gfx_a = 1; gfx_r = panel_r*0.8; gfx_g = panel_g*0.8; gfx_b = panel_b*0.8;
+    draw_rrect(320, content_y+285, 425, 30, 6);
+    sprintf(#fb_out, "%.3f sec", fb_calc_tail);
+    gfx_a = 1; gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+    set_font(20); gfx_x = floor(offset_x+335*scale); gfx_y = floor(offset_y+(content_y+289)*scale);
+    gfx_drawstr(#fb_out);
+
+    sprintf(#fb_out, "Continuous estimate: %.2f repeats", fb_calc_repeats);
+    text_muted(320, content_y+322, #fb_out, 12);
+    sprintf(#fb_out, "Last repeat: ~#%d at %.2f sec", last_rep, last_rep*fb_delay_ms/1000);
+    text_muted(320, content_y+337, #fb_out, 12);
+    sprintf(#fb_out, "approx %.1f beats @ %.0f BPM", tail_beats, bpm);
+    text_muted(320, content_y+352, #fb_out, 12);
+    sprintf(#fb_out, "approx %.2f bars (%d/%d)", tail_bars, cur_ts_num, cur_ts_den);
+    text_muted(320, content_y+367, #fb_out, 12);
+  ) : (
+    #str_tmp = "TARGET TAIL (sec)"; text_muted(35, content_y+272, #str_tmp, 11);
+    hover_fb_input = (my >= 354) && (mx >= 35 && mx <= 285 && my >= content_y+285 && my <= content_y+315);
+    gfx_a = 1;
+    (fb_edit_field == 3) ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) :
+    (hover_fb_input ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;));
+    draw_rrect(35, content_y+285, 250, 30, 6);
+
+    fb_edit_field == 3 ? (
+      gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+      set_font(20); gfx_x = floor(offset_x+50*scale); gfx_y = floor(offset_y+(content_y+289)*scale);
+      gfx_drawstr(#fb_buf);
+      gfx_measurestr(#fb_buf, tw, th);
+      cur_on = ((floor(time_precise()*2)) % 2) == 0;
+      cur_on ? (
+        gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+        gfx_rect(floor(offset_x+50*scale+tw+2*scale), floor(offset_y+(content_y+289)*scale), 2, floor(22*scale), 1);
+      );
+    ) : (
+      sprintf(#fb_out, "%.3f sec", fb_tail_target);
+      text_left(50, content_y+289, #fb_out, 20);
+    );
+
+    sprintf(#fb_out, "FEEDBACK TO %d dB", fb_threshold);
+    text_muted(320, content_y+272, #fb_out, 11);
+    gfx_a = 1; gfx_r = panel_r*0.8; gfx_g = panel_g*0.8; gfx_b = panel_b*0.8;
+    draw_rrect(320, content_y+285, 425, 30, 6);
+    sprintf(#fb_out, "%.2f %%", fb_calc_feedback);
+    gfx_a = 1; gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+    set_font(20); gfx_x = floor(offset_x+335*scale); gfx_y = floor(offset_y+(content_y+289)*scale);
+    gfx_drawstr(#fb_out);
+
+    sprintf(#fb_out, "Continuous estimate: %.2f repeats", fb_calc_repeats);
+    text_muted(320, content_y+322, #fb_out, 12);
+    sprintf(#fb_out, "Last repeat: ~#%d at %.2f sec", last_rep, last_rep*fb_delay_ms/1000);
+    text_muted(320, content_y+337, #fb_out, 12);
+    sprintf(#fb_out, "approx %.1f beats @ %.0f BPM", tail_beats, bpm);
+    text_muted(320, content_y+352, #fb_out, 12);
+    sprintf(#fb_out, "approx %.2f bars (%d/%d)", tail_bars, cur_ts_num, cur_ts_den);
+    text_muted(320, content_y+367, #fb_out, 12);
+  );
+
+  panel(15, content_y+410, 755, 130);
+  #str_tmp = "UNIVERSAL FEEDBACK SCALES"; text_muted(35, content_y+420, #str_tmp, 11);
+  #str_tmp = "Standard % (0-100%):"; text_muted(35, content_y+442, #str_tmp, 12);
+  sprintf(#fb_out, "%.2f %%", fb_calc_feedback);
+  gfx_a = 1; gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+  set_font(16); gfx_x = floor(offset_x+250*scale); gfx_y = floor(offset_y+(content_y+438)*scale);
+  gfx_drawstr(#fb_out);
+
+  #str_tmp = "Normalized (0.00 - 1.00):"; text_muted(35, content_y+462, #str_tmp, 12);
+  sprintf(#fb_out, "%.3f", fb_calc_feedback/100);
+  gfx_a = 1; gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+  set_font(16); gfx_x = floor(offset_x+250*scale); gfx_y = floor(offset_y+(content_y+458)*scale);
+  gfx_drawstr(#fb_out);
+
+  #str_tmp = "Analog Dial (0 - 10):"; text_muted(35, content_y+482, #str_tmp, 12);
+  sprintf(#fb_out, "%.2f", fb_calc_feedback/10);
+  gfx_a = 1; gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+  set_font(16); gfx_x = floor(offset_x+250*scale); gfx_y = floor(offset_y+(content_y+478)*scale);
+  gfx_drawstr(#fb_out);
+
+  #str_tmp = "Loop Gain (dB):"; text_muted(35, content_y+502, #str_tmp, 12);
+  fb_calc_feedback > 0.1 ? sprintf(#fb_out, "%.2f dB", fb_db_val) : sprintf(#fb_out, "-inf dB");
+  gfx_a = 1; gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+  set_font(16); gfx_x = floor(offset_x+250*scale); gfx_y = floor(offset_y+(content_y+498)*scale);
+  gfx_drawstr(#fb_out);
+
+  #str_tmp = "For analog emulations with non-"; text_muted(440, content_y+438, #str_tmp, 11);
+  #str_tmp = "linear knob tapers, use Loop Gain"; text_muted(440, content_y+455, #str_tmp, 11);
+  #str_tmp = "(dB) or Standard % as a theoretical"; text_muted(440, content_y+472, #str_tmp, 11);
+  #str_tmp = "baseline. Values above 100% ="; text_muted(440, content_y+489, #str_tmp, 11);
+  #str_tmp = "self-oscillation (not calculated)."; text_muted(440, content_y+506, #str_tmp, 11);
+);
+
+gfx_a = 1; gfx_r = bg_r; gfx_g = bg_g; gfx_b = bg_b;
+gfx_rect(0, 0, gfx_w, floor(offset_y+360*scale), 1);
+
+#str_tmp = "Delay & Reverb Calculator v1.0"; text_left(25, 18, #str_tmp, 21);
+#str_tmp = "Tempo based calculator for delay, reverb and FX timing"; text_muted(25, 47, #str_tmp, 11);
+
+sync_mode ? (gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;) : (hover_sync ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r; gfx_g = panel_g; gfx_b = panel_b;));
+gfx_a = 1; draw_rrect(455, 18, 120, 30, 6);
+sync_mode ? (#str_tmp = "SYNC: HOST") : (#str_tmp = "SYNC: MANUAL");
+sync_mode ? text_center_c(455, 18, 120, 30, #str_tmp, 12, 0.05, 0.05, 0.05) : text_center_c(455, 18, 120, 30, #str_tmp, 12, text_r, text_g, text_b);
+
+hover_theme ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r; gfx_g = panel_g; gfx_b = panel_b;);
+gfx_a = 1; draw_rrect(585, 18, 105, 30, 6);
+text_center(585, 18, 105, 30, #theme_name, 12);
+
+hover_help ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;);
+gfx_a = 1; draw_rrect(700, 18, 70, 30, 6);
+#str_tmp = "? Help"; text_center(700, 18, 70, 30, #str_tmp, 13);
+
+panel(15, 75, 370, 115);
+sync_mode ? (#str_tmp = "HOST BPM (LOCKED)") :
+edit_bpm ? (#str_tmp = "TYPE BPM & PRESS ENTER") :
+           (#str_tmp = "ENTER YOUR BPM");
+text_muted(35, 88, #str_tmp, 12);
+
+gfx_a = 0.3; gfx_r = 0; gfx_g = 0; gfx_b = 0; draw_rrect(35, 113, 330, 49, 8);
+gfx_a = 1; gfx_r = panel_r*1.2; gfx_g = panel_g*1.2; gfx_b = panel_b*1.2; draw_rrect(35, 115, 330, 45, 8);
+
+edit_bpm && !sync_mode ? (
+  gfx_a = 0.5; gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+  gfx_rect(floor(offset_x+35*scale), floor(offset_y+115*scale), floor(330*scale), 1, 1);
+  gfx_rect(floor(offset_x+35*scale), floor(offset_y+159*scale), floor(330*scale), 1, 1);
+  gfx_a = 1;
+);
+
+edit_bpm && !sync_mode ? (
+  gfx_a = 1; gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+  set_font(24); gfx_x = floor(offset_x+45*scale); gfx_y = floor(offset_y+124*scale);
+  gfx_drawstr(#bpm_string);
+  gfx_measurestr(#bpm_string, tw, th);
+  cur_on = ((floor(time_precise()*2)) % 2) == 0;
+  cur_on ? (
+    gfx_a = 1; gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+    gfx_rect(floor(offset_x+45*scale+tw+2*scale), floor(offset_y+124*scale), 2, floor(26*scale), 1);
+  );
+) : (
+  sprintf(#bpm_display, "%.2f", bpm);
+  gfx_a = 1;
+  sync_mode ? (gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;) : (gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;);
+  set_font(24); gfx_x = floor(offset_x+45*scale); gfx_y = floor(offset_y+124*scale);
+  gfx_drawstr(#bpm_display);
+);
+
+bpm_ratio = (bpm-20)/280;
+bpm_ratio < 0 ? bpm_ratio = 0;
+bpm_ratio > 1 ? bpm_ratio = 1;
+gfx_a = 1; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+gfx_rect(floor(offset_x+35*scale), floor(offset_y+170*scale), floor(330*scale), 3, 1);
+gfx_a = 1; gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+gfx_rect(floor(offset_x+35*scale), floor(offset_y+170*scale), floor((330*bpm_ratio)*scale), 3, 1);
+gfx_a = 1; gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+gfx_rect(floor(offset_x+(35+330*bpm_ratio-2)*scale), floor(offset_y+169*scale), 2, 5, 1);
+gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+gfx_rect(floor(offset_x+(35+330*0.25)*scale), floor(offset_y+169*scale), 1, 5, 1);
+gfx_rect(floor(offset_x+(35+330*0.50)*scale), floor(offset_y+169*scale), 1, 5, 1);
+gfx_rect(floor(offset_x+(35+330*0.75)*scale), floor(offset_y+169*scale), 1, 5, 1);
+
+panel(400, 75, 370, 115);
+sync_mode ? (
+  gfx_a = 1; gfx_r = panel_r*0.8; gfx_g = panel_g*0.8; gfx_b = panel_b*0.8;
+  draw_rrect(420, 93, 330, 77, 10);
+  gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+) : (
+  tap_press ? (
+    gfx_a = 1; gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+    draw_rrect(420, 95, 330, 75, 10);
+    gfx_r = 0.05; gfx_g = 0.05; gfx_b = 0.05;
+  ) : (
+    hover_tap ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;);
+    gfx_a = 1; draw_rrect(420, 93, 330, 77, 10);
+    gfx_r = 1; gfx_g = 1; gfx_b = 1; gfx_a = 0.06;
+    gfx_rect(floor(offset_x+430*scale), floor(offset_y+94*scale), floor(310*scale), 1, 1);
+    gfx_a = 1; gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+  );
+);
+
+tap_n == 0 ? (#tap_label = "TAP BPM") : (#tap_label = "TAP AGAIN");
+gfx_a = 1;
+sync_mode ? (gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;) : (gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;);
+set_font(24); gfx_measurestr(#tap_label, tw, th);
+gfx_x = floor(offset_x + (420+330/2)*scale - tw/2);
+gfx_y = floor(offset_y + (95+28)*scale - th/2 - 1*scale);
+gfx_drawstr(#tap_label);
+
+tap_n > 0 ? (
+  sprintf(#taps_count, "TAPS: %d", tap_n);
+  set_font(11); gfx_a = 1;
+  sync_mode ? (gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;) : (gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;);
+  gfx_measurestr(#taps_count, tw2, th2);
+  gfx_x = floor(offset_x + (420+330/2)*scale - tw2/2);
+  gfx_y = floor(offset_y + (95+55)*scale);
+  gfx_drawstr(#taps_count);
+);
+
+gfx_a = 1;
+hover_custom && !show_custom_menu && !show_ts_menu && !show_help ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r; gfx_g = panel_g; gfx_b = panel_b;);
+draw_rrect(15, 200, 755, 48, 10);
+gfx_r = 1; gfx_g = 1; gfx_b = 1; gfx_a = 0.10;
+gfx_rect(floor(offset_x+27*scale), floor(offset_y+201*scale), floor(731*scale), 1, 1);
+gfx_a = 1; gfx_r = 0; gfx_g = 0; gfx_b = 0; gfx_a = 0.18;
+gfx_rect(floor(offset_x+27*scale), floor(offset_y+247*scale), floor(731*scale), 1, 1);
+gfx_a = 1;
+#str_tmp = "+  Custom"; text_center(15, 200, 755, 48, #str_tmp, 18);
+
+panel(15, 255, 370, 62);
+#str_tmp = "ms"; unit_button(25,  265, 110, 42, unit == 0, hover_ms, #str_tmp);
+#str_tmp = "s";  unit_button(145, 265, 110, 42, unit == 1, hover_s,  #str_tmp);
+#str_tmp = "Hz"; unit_button(265, 265, 110, 42, unit == 2, hover_hz, #str_tmp);
+
+panel(400, 255, 370, 62);
+show_ts_menu == 0 ? (
+  hover_ts ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.3; gfx_g = panel_g*1.3; gfx_b = panel_b*1.3;);
+  gfx_a = 1; draw_rrect(435, 265, 330, 42, 8);
+  gfx_r = 1; gfx_g = 1; gfx_b = 1; gfx_a = 0.05;
+  gfx_rect(floor(offset_x+445*scale), floor(offset_y+266*scale), floor(310*scale), 1, 1);
+  gfx_a = 1;
+  sprintf(#ts, "%d/%d", cur_ts_num, cur_ts_den);
+  text_center(435, 265, 330, 42, #ts, 18);
+);
+
+active_tab == 0 ? (
+  gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b; gfx_a = 1;
+  draw_rrect(15, 325, 245, 30, 6);
+  gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.6;
+  gfx_rect(floor(offset_x+27*scale), floor(offset_y+353*scale), floor(221*scale), 1, 1);
+  gfx_a = 1;
+) : (
+  hover_tab1 ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*0.9; gfx_g = panel_g*0.9; gfx_b = panel_b*0.9;);
+  gfx_a = 1; draw_rrect(15, 325, 245, 30, 6);
+  draw_bevel(15, 325, 245, 30, 6);
+);
+active_tab == 1 ? (
+  gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b; gfx_a = 1;
+  draw_rrect(270, 325, 245, 30, 6);
+  gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.6;
+  gfx_rect(floor(offset_x+282*scale), floor(offset_y+353*scale), floor(221*scale), 1, 1);
+  gfx_a = 1;
+) : (
+  hover_tab2 ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*0.9; gfx_g = panel_g*0.9; gfx_b = panel_b*0.9;);
+  gfx_a = 1; draw_rrect(270, 325, 245, 30, 6);
+  draw_bevel(270, 325, 245, 30, 6);
+);
+active_tab == 2 ? (
+  gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b; gfx_a = 1;
+  draw_rrect(525, 325, 245, 30, 6);
+  gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi; gfx_a = 0.6;
+  gfx_rect(floor(offset_x+537*scale), floor(offset_y+353*scale), floor(221*scale), 1, 1);
+  gfx_a = 1;
+) : (
+  hover_tab3 ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*0.9; gfx_g = panel_g*0.9; gfx_b = panel_b*0.9;);
+  gfx_a = 1; draw_rrect(525, 325, 245, 30, 6);
+  draw_bevel(525, 325, 245, 30, 6);
+);
+
+#str_tmp = "Reverb Suggestions"; active_tab == 0 ? text_center_c(15,  325, 245, 30, #str_tmp, 13, 0.05, 0.05, 0.05) : text_center(15,  325, 245, 30, #str_tmp, 13);
+#str_tmp = "Note Durations";     active_tab == 1 ? text_center_c(270, 325, 245, 30, #str_tmp, 13, 0.05, 0.05, 0.05) : text_center(270, 325, 245, 30, #str_tmp, 13);
+#str_tmp = "Delay Tail";         active_tab == 2 ? text_center_c(525, 325, 245, 30, #str_tmp, 13, 0.05, 0.05, 0.05) : text_center(525, 325, 245, 30, #str_tmp, 13);
+
+(!show_ts_menu && !show_custom_menu && !show_help) ? (
+  mouse_clicked && hover_tab1 ? (active_tab = 0; scroll_y = 0; slider5 = 0;);
+  mouse_clicked && hover_tab2 ? (active_tab = 1; scroll_y = 0; slider5 = 1;);
+  mouse_clicked && hover_tab3 ? (active_tab = 2; scroll_y = 0; slider5 = 2;);
+);
+
+show_help ? (
+  hover_help_close = (mx >= 675 && mx <= 765 && my >= 35 && my <= 70);
+  hover_help_lang  = (mx >= 585 && mx <= 670 && my >= 35 && my <= 70);
+
+  mouse_clicked && hover_help_close ? (show_help = 0;);
+  mouse_clicked && hover_help_lang ? (help_lang = !help_lang;);
+
+  mouse_clicked && mx >= 35 && mx <= 125 && my >= 585 && my <= 620 ? (
+    help_scroll -= 1;
+    help_scroll < 0 ? help_scroll = 0;
+  );
+
+  mouse_clicked && mx >= 655 && mx <= 750 && my >= 585 && my <= 620 ? (
+    help_scroll += 1;
+    help_scroll > 21 ? help_scroll = 21;
+  );
+
+  mouse_wheel != help_wheel ? (
+    mouse_wheel > help_wheel ? (
+      help_scroll -= 1;
+      help_scroll < 0 ? help_scroll = 0;
+    ) : (
+      help_scroll += 1;
+      help_scroll > 21 ? help_scroll = 21;
+    );
+    help_wheel = mouse_wheel;
+  );
+
+  mouse_clicked && (mx < 15 || mx > 770 || my < 20 || my > 635) ? (show_help = 0;);
+) : show_custom_menu ? (
+  mouse_clicked ? ((mx < 182 || mx > 602 || my < 160 || my > 630) ? (show_custom_menu = 0;););
+) : show_ts_menu ? (
+  mouse_clicked ? (
+    (mx >= 275 && mx <= 370 && my >= 228 && my <= 293 && !sync_mode) ? (edit_ts = 1; strcpy(#ts_num_str, ""););
+    (mx >= 415 && mx <= 510 && my >= 228 && my <= 293 && !sync_mode) ? (edit_ts = 2; strcpy(#ts_den_str, ""););
+    !sync_mode && mx >= 200 && mx <= 290 && my >= 368 && my <= 422 ? (manual_ts_num = 2;  manual_ts_den = 4; cur_ts_num = 2;  cur_ts_den = 4;  slider8 = 2;  slider9 = 4;  edit_ts = 0;);
+    !sync_mode && mx >= 295 && mx <= 385 && my >= 368 && my <= 422 ? (manual_ts_num = 3;  manual_ts_den = 4; cur_ts_num = 3;  cur_ts_den = 4;  slider8 = 3;  slider9 = 4;  edit_ts = 0;);
+    !sync_mode && mx >= 390 && mx <= 480 && my >= 368 && my <= 422 ? (manual_ts_num = 4;  manual_ts_den = 4; cur_ts_num = 4;  cur_ts_den = 4;  slider8 = 4;  slider9 = 4;  edit_ts = 0;);
+    !sync_mode && mx >= 485 && mx <= 575 && my >= 368 && my <= 422 ? (manual_ts_num = 5;  manual_ts_den = 4; cur_ts_num = 5;  cur_ts_den = 4;  slider8 = 5;  slider9 = 4;  edit_ts = 0;);
+    !sync_mode && mx >= 200 && mx <= 290 && my >= 432 && my <= 486 ? (manual_ts_num = 6;  manual_ts_den = 8; cur_ts_num = 6;  cur_ts_den = 8;  slider8 = 6;  slider9 = 8;  edit_ts = 0;);
+    !sync_mode && mx >= 295 && mx <= 385 && my >= 432 && my <= 486 ? (manual_ts_num = 7;  manual_ts_den = 8; cur_ts_num = 7;  cur_ts_den = 8;  slider8 = 7;  slider9 = 8;  edit_ts = 0;);
+    !sync_mode && mx >= 390 && mx <= 480 && my >= 432 && my <= 486 ? (manual_ts_num = 9;  manual_ts_den = 8; cur_ts_num = 9;  cur_ts_den = 8;  slider8 = 9;  slider9 = 8;  edit_ts = 0;);
+    !sync_mode && mx >= 485 && mx <= 575 && my >= 432 && my <= 486 ? (manual_ts_num = 12; manual_ts_den = 8; cur_ts_num = 12; cur_ts_den = 8;  slider8 = 12; slider9 = 8;  edit_ts = 0;);
+    (mx < 195 || mx > 590 || my < 160 || my > 560) ? (show_ts_menu = 0; edit_ts = 0;);
+  );
+) : (
+  mouse_clicked && hover_sync   ? (sync_mode = !sync_mode; slider3 = sync_mode; edit_bpm = 0;);
+  mouse_clicked && hover_theme  ? (theme += 1; theme > 3 ? theme = 0; slider4 = theme; apply_theme(););
+  mouse_clicked && hover_help   ? (show_help = 1; help_scroll = 0; help_wheel = mouse_wheel;);
+  mouse_clicked && hover_custom ? (show_custom_menu = 1; strcpy(#custom_string, ""););
+  mouse_clicked && (mx < 35 || mx > 365 || my < 115 || my > 160) ? (edit_bpm = 0; strcpy(#bpm_string, ""););
+  mouse_clicked && my >= 255 && my <= 317 ? (
+    mx >= 25  && mx < 143  ? (unit = 0; slider2 = 0;);
+    mx >= 143 && mx < 266  ? (unit = 1; slider2 = 1;);
+    mx >= 266 && mx <= 389 ? (unit = 2; slider2 = 2;);
+  );
+  mouse_clicked && hover_ts ? (show_ts_menu = 1; edit_ts = 0;);
+  mouse_clicked && !sync_mode && mx >= 35 && mx <= 365 && my >= 115 && my <= 160 ? (edit_bpm = 1; strcpy(#bpm_string, ""););
+
+  (mouse_mid_clicked || mouse_right_clicked) && hover_tap && !sync_mode ? (
+    tap_n = 0;
+    tap_i0 = 0; tap_i1 = 0; tap_i2 = 0; tap_i3 = 0; tap_i4 = 0; tap_i5 = 0;
+    tap_last = 0;
+  );
+
+  mouse_clicked && !sync_mode && mx >= 400 && mx <= 770 && my >= 75 && my <= 190 ? (
+    now = time_precise();
+    tap_last > 0 && now - tap_last > 2.0 ? (
+      tap_n = 0; tap_i0 = 0; tap_i1 = 0; tap_i2 = 0; tap_i3 = 0; tap_i4 = 0; tap_i5 = 0;
+    );
+    tap_last > 0 ? (
+      interval = now - tap_last;
+      interval > 0.1 && interval < 2.0 ? (
+        tap_i5 = tap_i4; tap_i4 = tap_i3; tap_i3 = tap_i2;
+        tap_i2 = tap_i1; tap_i1 = tap_i0; tap_i0 = interval;
+        tap_n += 1;
+        tap_n > 6 ? tap_n = 6;
+        tsum = 0;
+        tap_n >= 1 ? tsum += tap_i0;
+        tap_n >= 2 ? tsum += tap_i1;
+        tap_n >= 3 ? tsum += tap_i2;
+        tap_n >= 4 ? tsum += tap_i3;
+        tap_n >= 5 ? tsum += tap_i4;
+        tap_n >= 6 ? tsum += tap_i5;
+        avg = tsum / tap_n;
+        avg > 0 ? (
+          bpm = 60/avg;
+          bpm < 20 ? bpm = 20;
+          bpm > 300 ? bpm = 300;
+          manual_bpm = bpm;
+          slider1 = bpm;
+        );
+      );
+    );
+    tap_last = now;
+  );
+
+  active_tab == 2 ? (
+    mouse_clicked && hover_fb_mode0 ? (fb_mode = 0; fb_edit_field = 0; strcpy(#fb_buf, ""););
+    mouse_clicked && hover_fb_mode1 ? (fb_mode = 1; fb_edit_field = 0; strcpy(#fb_buf, ""););
+    mouse_clicked && hover_thr40    ? (fb_threshold = -40; fb_threshold_idx = 0; slider6 = 0;);
+    mouse_clicked && hover_thr50    ? (fb_threshold = -50; fb_threshold_idx = 1; slider6 = 1;);
+    mouse_clicked && hover_thr60    ? (fb_threshold = -60; fb_threshold_idx = 2; slider6 = 2;);
+    mouse_clicked && hover_thr70    ? (fb_threshold = -70; fb_threshold_idx = 3; slider6 = 3;);
+    mouse_clicked && hover_dmp0     ? (fb_damping_mode = 0; slider7 = 0;);
+    mouse_clicked && hover_dmp1     ? (fb_damping_mode = 1; slider7 = 1;);
+    mouse_clicked && hover_dmp2     ? (fb_damping_mode = 2; slider7 = 2;);
+    mouse_clicked && hover_fb_delay ? (fb_edit_field = 1; strcpy(#fb_buf, ""););
+    mouse_clicked && hover_fb_input ? (
+      fb_mode == 0 ? (fb_edit_field = 2; strcpy(#fb_buf, "");) : (fb_edit_field = 3; strcpy(#fb_buf, ""););
+    );
+  );
+);
+
+show_help ? (
+  gfx_a = 0.78; gfx_r = 0; gfx_g = 0; gfx_b = 0; gfx_rect(0, 0, gfx_w, gfx_h, 1); gfx_a = 1;
+  panel(15, 20, 755, 615);
+  help_lang == 0 ? (#str_tmp = "DELAY & REVERB CALCULATOR — USER MANUAL") : (#str_tmp = "DELAY & REVERB CALCULATOR — ПОСІБНИК КОРИСТУВАЧА");
+  text_center_c(25, 27, 550, 32, #str_tmp, 15, accent_hi_r, accent_hi_g, accent_b_hi);
+  hover_help_lang ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.5; gfx_g = panel_g*1.5; gfx_b = panel_b*1.5;); gfx_a = 1; draw_rrect(585, 35, 85, 32, 6);
+  help_lang == 0 ? (#str_tmp = "EN | UA") : (#str_tmp = "UA | EN"); text_center(585, 35, 85, 32, #str_tmp, 11);
+  hover_help_close ? (gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;) : (gfx_r = panel_r*1.5; gfx_g = panel_g*1.5; gfx_b = panel_b*1.5;); gfx_a = 1; draw_rrect(675, 35, 90, 32, 6); help_lang == 0 ? (#str_tmp = "Close") : (#str_tmp = "Закрити"); text_center(675, 35, 90, 32, #str_tmp, 11);
+  gfx_a = 0.4; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b; gfx_rect(floor(offset_x+30*scale), floor(offset_y+78*scale), floor(725*scale), 1, 1); gfx_a = 1;
+  help_scroll == 0 ? (
+    help_lang == 0 ? (#str_tmp = "1. OVERVIEW & BPM") : (#str_tmp = "1. ОГЛЯД І BPM");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "OVERVIEW") : (#str_tmp = "ОГЛЯД");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Delay & Reverb Calculator is a tempo-based utility for calculating musical timing values for delay, reverb, and other time-based effects."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "The calculator uses BPM and time signature to convert musical timing into exact time values."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "It can also follow the host application tempo and time signature automatically."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Main sections: Reverb Suggestions, Note Durations, and Delay Tail."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "Additional tools: Tap BPM, Custom Converter, display units, feedback scales, themes, and EN/UA Help."; text_muted(40, 247, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Delay & Reverb Calculator — утиліта на основі темпу для розрахунку музичних значень часу для delay, reverb та інших ефектів."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Калькулятор використовує BPM і розмір такту, щоб перетворювати музичний таймінг у точні значення часу."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Також він може автоматично слідувати за темпом і розміром такту хоста."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Основні розділи: Reverb Suggestions, Note Durations і Delay Tail."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "Додатково: Tap BPM, Custom Converter, одиниці відображення, шкали feedback, теми та EN/UA Help."; text_muted(40, 247, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "BPM") : (#str_tmp = "BPM");
+    text_left(40, 285, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "BPM means Beats Per Minute. It is the tempo used for all musical-time calculations."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "60 BPM = 1000 ms per quarter note.  120 BPM = 500 ms.  140 BPM = approximately 428.57 ms."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Changing BPM changes note durations, reverb timing suggestions, and beat/bar conversions."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Manual BPM range: 20–300 BPM. Values outside this range are limited to the supported range."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "To edit BPM: click the BPM value, type the number, and press Enter."; text_muted(40, 387, #str_tmp, 13);
+    ) : (
+    #str_tmp = "BPM означає Beats Per Minute — удари за хвилину. Це основа всіх музичних розрахунків часу."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "60 BPM = 1000 мс на чверть. 120 BPM = 500 мс. 140 BPM = приблизно 428.57 мс."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Зміна BPM змінює тривалості нот, таймінг ревербу та перерахунок у долі й такти."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Діапазон Manual BPM: 20–300 BPM. Значення за межами діапазону обмежуються підтримуваним діапазоном."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "Для редагування BPM натисніть на значення, введіть число та натисніть Enter."; text_muted(40, 387, #str_tmp, 13);
+    );
+
+    draw_kofi_qr(620, 395, 5);
+
+    gfx_a = 1; gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+    set_font(11);
+    help_lang == 0 ? (
+      #str_tmp = "Support development";
+    ) : (
+      #str_tmp = "Підтримати розробку";
+    );
+    gfx_measurestr(#str_tmp, tw_qr, th_qr);
+    gfx_x = floor(offset_x + (620 + 62)*scale - tw_qr/2);
+    gfx_y = floor(offset_y + 545*scale);
+    gfx_drawstr(#str_tmp);
+
+    gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+    set_font(10);
+    #str_tmp = "ko-fi.com/vitaliisound";
+    gfx_measurestr(#str_tmp, tw_qr, th_qr);
+    gfx_x = floor(offset_x + (620 + 62)*scale - tw_qr/2);
+    gfx_y = floor(offset_y + 560*scale);
+    gfx_drawstr(#str_tmp);
+  ) : help_scroll == 1 ? (
+    help_lang == 0 ? (#str_tmp = "2. TAP BPM & SYNC") : (#str_tmp = "2. TAP BPM ТА SYNC");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "TAP BPM") : (#str_tmp = "TAP BPM");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Click TAP BPM repeatedly in time with the music."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "The calculator averages the recent tap intervals and converts them to BPM."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Up to six recent intervals are used for the average."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "If more than two seconds pass between taps, the current tap sequence is restarted."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "Intervals outside the accepted range are ignored."; text_muted(40, 247, #str_tmp, 13);
+    #str_tmp = "Middle- or right-click the TAP BPM area to reset the tap counter."; text_muted(40, 267, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Натискайте TAP BPM кілька разів у ритм музики."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Плагін усереднює останні інтервали між натисканнями та переводить їх у BPM."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Для середнього використовується до шести останніх інтервалів."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Якщо між натисканнями минає більше двох секунд, поточна серія починається заново."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "Інтервали поза допустимим діапазоном ігноруються."; text_muted(40, 247, #str_tmp, 13);
+    #str_tmp = "Середня або права кнопка миші на TAP BPM скидає лічильник."; text_muted(40, 267, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "MANUAL / SYNC") : (#str_tmp = "MANUAL / SYNC");
+    text_left(40, 305, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Manual uses the BPM and time signature entered by the user."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Use Manual for independent calculations, experimentation, or work outside a DAW project."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Sync follows the host application tempo. The BPM control is locked while Sync is active."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "When available, the host time signature is also used. Changing project tempo updates the calculator automatically."; text_muted(40, 387, #str_tmp, 13);
+    #str_tmp = "If the host does not provide a valid tempo, the calculator keeps a valid BPM within its supported range."; text_muted(40, 407, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Manual використовує BPM і розмір такту, введені користувачем."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Manual зручний для незалежних розрахунків, експериментів або роботи без DAW."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Sync слідує за темпом хоста. У Sync керування BPM блокується."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "Якщо хост надає коректний розмір такту, він також використовується. Зміна темпу проєкту автоматично оновлює калькулятор."; text_muted(40, 387, #str_tmp, 13);
+    #str_tmp = "Якщо хост не дає коректного темпу, калькулятор зберігає допустимий BPM."; text_muted(40, 407, #str_tmp, 13);
+    );
+  ) : help_scroll == 2 ? (
+    help_lang == 0 ? (#str_tmp = "3. TIME SIGNATURE & UNITS") : (#str_tmp = "3. РОЗМІР ТАКТУ ТА ОДИНИЦІ");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "TIME SIGNATURE") : (#str_tmp = "РОЗМІР ТАКТУ");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "The time signature determines how many quarter-note equivalents are contained in one bar."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "4/4 = 4 quarter-note equivalents. 3/4 = 3. 6/8 = 3. 12/8 = 6."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Presets: March 2/4, Waltz 3/4, Common 4/4, Five Four 5/4, Six Eight 6/8, Seven Eight 7/8, Nine Eight 9/8, Twelve Eight 12/8."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "In Manual mode, numerator and denominator can be entered separately. Supported range: 1–16."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "In Sync mode, the host time signature takes priority."; text_muted(40, 247, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Розмір такту визначає кількість еквівалентів чверті в одному такті."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "4/4 = 4 чверті. 3/4 = 3. 6/8 = 3. 12/8 = 6."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Пресети: March 2/4, Waltz 3/4, Common 4/4, Five Four 5/4, Six Eight 6/8, Seven Eight 7/8, Nine Eight 9/8, Twelve Eight 12/8."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "У Manual чисельник і знаменник можна вводити окремо. Діапазон: 1–16."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "У Sync пріоритет має розмір такту хоста."; text_muted(40, 247, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "DISPLAY UNITS") : (#str_tmp = "ОДИНИЦІ ВІДОБРАЖЕННЯ");
+    text_left(40, 285, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "ms = milliseconds. This is the direct unit used by most delay and timing controls."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "s = seconds. Useful for longer reverb tails and decay times."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Hz = reciprocal frequency representation of the interval. Frequency = 1000 / milliseconds."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Example: 500 ms = 2 Hz."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "Changing the display unit changes how calculated time is shown; it does not change the calculation itself."; text_muted(40, 387, #str_tmp, 13);
+    ) : (
+    #str_tmp = "ms = мілісекунди. Це пряме значення для більшості delay і timing-контролів."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "s = секунди. Зручно для довгих reverb tails і decay."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Hz = обернене представлення частоти інтервалу. Частота = 1000 / мілісекунди."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Приклад: 500 мс = 2 Hz."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "Зміна одиниці змінює лише спосіб відображення часу, а не сам розрахунок."; text_muted(40, 387, #str_tmp, 13);
+    );
+  ) : help_scroll == 3 ? (
+    help_lang == 0 ? (#str_tmp = "4. REVERB") : (#str_tmp = "4. REVERB");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "REVERB SUGGESTIONS") : (#str_tmp = "REVERB SUGGESTIONS");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "The Reverb Suggestions tab provides tempo-based starting points for reverb design."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Each room type is calculated from the current BPM and time signature."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "The result is separated into Pre-delay, Decay Time, and Total Reverb Time."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Pre-delay is the time between the dry signal and the beginning of the main reverb response."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "Decay Time is the remaining calculated reverb duration after pre-delay."; text_muted(40, 247, #str_tmp, 13);
+    #str_tmp = "Total Reverb Time is the complete calculated duration, including pre-delay."; text_muted(40, 267, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Reverb Suggestions дає стартові значення для дизайну ревербу на основі темпу."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Кожен тип приміщення розраховується з поточного BPM і розміру такту."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Результат розділено на Pre-delay, Decay Time і Total Reverb Time."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Pre-delay — час між сухим сигналом і початком основної реверберації."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "Decay Time — залишок розрахованої тривалості ревербу після pre-delay."; text_muted(40, 247, #str_tmp, 13);
+    #str_tmp = "Total Reverb Time — повна розрахована тривалість разом із pre-delay."; text_muted(40, 267, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "REVERB SIZE SUGGESTIONS") : (#str_tmp = "РОЗМІРИ РЕВЕРБУ");
+    text_left(40, 305, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "These are timing suggestions, not acoustic simulations of real buildings."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Stadium: pre-delay 1/16, total length 4 bars."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Cathedral: 1/32, 3 bars.  Hall: 1/32, 2 bars."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "Large Room: 1/64, 1 bar.  Medium Room: 1/128, 0.75 bar."; text_muted(40, 387, #str_tmp, 13);
+    #str_tmp = "Small Room: 1/256, 0.5 bar.  Bathroom: 1/512, 0.375 bar."; text_muted(40, 407, #str_tmp, 13);
+    #str_tmp = "Tight Echo: 1/1024, 0.25 bar.  Shoebox: 1/2048, 0.125 bar."; text_muted(40, 427, #str_tmp, 13);
+    #str_tmp = "These values do not model room dimensions, materials, diffusion, absorption, or early reflections."; text_muted(40, 447, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Це таймінгові рекомендації, а не акустичні симуляції реальних будівель."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Stadium: pre-delay 1/16, загальна довжина 4 такти."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Cathedral: 1/32, 3 такти. Hall: 1/32, 2 такти."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "Large Room: 1/64, 1 такт. Medium Room: 1/128, 0.75 такту."; text_muted(40, 387, #str_tmp, 13);
+    #str_tmp = "Small Room: 1/256, 0.5 такту. Bathroom: 1/512, 0.375 такту."; text_muted(40, 407, #str_tmp, 13);
+    #str_tmp = "Tight Echo: 1/1024, 0.25 такту. Shoebox: 1/2048, 0.125 такту."; text_muted(40, 427, #str_tmp, 13);
+    #str_tmp = "Ці значення не моделюють розміри кімнати, матеріали, дифузію, поглинання чи ранні відбиття."; text_muted(40, 447, #str_tmp, 13);
+    );
+  ) : help_scroll == 4 ? (
+    help_lang == 0 ? (#str_tmp = "5. NOTE DURATIONS") : (#str_tmp = "5. ТРИВАЛОСТІ НОТ");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "NOTE VALUES") : (#str_tmp = "ЗНАЧЕННЯ НОТ");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Available values: 1, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256, 1/512."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Normal uses the standard musical duration."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Dotted multiplies the normal duration by 1.5."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Triplet uses two thirds of the corresponding normal division."; text_muted(40, 227, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Доступні значення: 1, 1/2, 1/4, 1/8, 1/16, 1/32, 1/64, 1/128, 1/256, 1/512."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Normal використовує стандартну музичну тривалість."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Dotted множить нормальну тривалість на 1.5."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Triplet використовує дві третини відповідного звичайного поділу."; text_muted(40, 227, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "EXAMPLES") : (#str_tmp = "ПРИКЛАДИ");
+    text_left(40, 265, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "At 120 BPM: 1/4 = 500 ms, 1/8 = 250 ms, 1/16 = 125 ms."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "At 120 BPM, 1/4 dotted = 750 ms."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "1/4 triplet = two thirds of a quarter-note duration."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "1/8 triplet = one third of a quarter-note duration."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Use these values for tempo-synced delay, modulation, and other time-based effects."; text_muted(40, 367, #str_tmp, 13);
+    ) : (
+    #str_tmp = "При 120 BPM: 1/4 = 500 мс, 1/8 = 250 мс, 1/16 = 125 мс."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "При 120 BPM: 1/4 dotted = 750 мс."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "1/4 triplet = дві третини тривалості чверті."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "1/8 triplet = одна третина тривалості чверті."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Використовуйте ці значення для tempo-sync delay, modulation та інших time-based ефектів."; text_muted(40, 367, #str_tmp, 13);
+    );
+  ) : help_scroll == 5 ? (
+    help_lang == 0 ? (#str_tmp = "6. CUSTOM CONVERTER") : (#str_tmp = "6. CUSTOM CONVERTER");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "CUSTOM CONVERTER") : (#str_tmp = "CUSTOM CONVERTER");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Enter an exact time in milliseconds and the calculator searches its supported rhythmic values."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "The result shows the closest note value, calculated duration, current BPM, percentage error, exact BPM for that note, and related effect times."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Example: enter 375 ms to find the closest musical timing value."; text_muted(40, 207, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Введіть точний час у мілісекундах, і калькулятор знайде найближчі підтримувані ритмічні значення."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Результат показує найближчу ноту, тривалість, BPM, помилку, точний BPM для ноти та пов'язані часи ефектів."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Приклад: введіть 375 мс, щоб знайти найближче музичне значення."; text_muted(40, 207, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "ERROR & EXACT BPM") : (#str_tmp = "ПОМИЛКА ТА ТОЧНИЙ BPM");
+    text_left(40, 245, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Error shows the difference between the entered value and the closest supported note duration."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "A positive error means the entered value is longer than the matched value; a negative error means it is shorter."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "If the difference is essentially zero, the calculator reports an exact match."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Exact BPM is the tempo at which the selected note value would equal the entered millisecond value exactly."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Useful effect suggestions: Reverb Tail / Decay = 4× matched value; Delay Time = matched value; Ducking Release = 2× matched value."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "These are convenience suggestions, not mandatory settings."; text_muted(40, 367, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Error показує різницю між введеним значенням і найближчою підтримуваною тривалістю ноти."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "Додатна помилка означає, що введене значення довше за знайдене; від’ємна — коротше."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "Якщо різниця практично нульова, калькулятор показує точний збіг."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Exact BPM — темп, при якому вибране значення ноти точно дорівнюватиме введеним мілісекундам."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Підказки: Reverb Tail/Decay = 4×; Delay Time = саме значення; Ducking Release = 2×."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Це зручні рекомендації, а не обов’язкові налаштування."; text_muted(40, 367, #str_tmp, 13);
+    );
+  ) : help_scroll == 6 ? (
+    help_lang == 0 ? (#str_tmp = "7. DELAY TAIL") : (#str_tmp = "7. DELAY TAIL");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "DELAY TAIL CALCULATOR") : (#str_tmp = "КАЛЬКУЛЯТОР DELAY TAIL");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "The Delay Tail tab estimates how long a feedback delay remains audible before repeats fall below a selected threshold."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Inputs include delay time, feedback or target tail, threshold, and damping profile."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "The calculation can report tail duration, repeat count, last repeat time, beats, bars, and feedback representations."; text_muted(40, 207, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Вкладка Delay Tail оцінює, як довго feedback delay залишається чутним, перш ніж повтори опустяться нижче заданого threshold."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Входи: час delay, feedback або цільовий tail, threshold і damping profile."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Результат може містити тривалість хвоста, кількість повторів, час останнього повтору, долі, такти та різні представлення feedback."; text_muted(40, 207, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "FEEDBACK → TAIL") : (#str_tmp = "FEEDBACK → TAIL");
+    text_left(40, 245, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Use this mode when you already know delay time and feedback percentage."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "Select the threshold that defines when the remaining repeats are considered finished."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "The calculator estimates tail duration and repeat count."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Workflow: enter delay time → set feedback → choose threshold → optionally choose damping → read the estimated tail."; text_muted(40, 327, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Використовуйте цей режим, коли вже знаєте delay time і відсоток feedback."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "Оберіть threshold, який визначає момент завершення чутного хвоста."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "Калькулятор оцінює тривалість хвоста та кількість повторів."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Workflow: delay time → feedback → threshold → за потреби damping → готовий tail."; text_muted(40, 327, #str_tmp, 13);
+    );
+  ) : help_scroll == 7 ? (
+    help_lang == 0 ? (#str_tmp = "8. TAIL → FEEDBACK") : (#str_tmp = "8. TAIL → FEEDBACK");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "TAIL → FEEDBACK") : (#str_tmp = "TAIL → FEEDBACK");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Use this mode when you know how long you want the delay tail to last."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Enter the desired target tail in seconds."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "The calculator estimates the feedback percentage required to reach approximately that duration."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "The result also includes estimated repeats and musical timing."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "Conceptually: desired tail → calculated feedback, instead of feedback → resulting tail."; text_muted(40, 247, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Використовуйте цей режим, коли знаєте бажану тривалість хвоста."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Введіть цільовий tail у секундах."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Калькулятор оцінить feedback, необхідний приблизно для такої тривалості."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Результат також містить оцінку повторів і музичного таймінгу."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "Логіка: бажаний tail → розрахований feedback, а не feedback → отриманий tail."; text_muted(40, 247, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "THRESHOLD") : (#str_tmp = "THRESHOLD");
+    text_left(40, 285, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Threshold defines the level at which the calculator considers the delay tail to have effectively ended."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Available values: -40 dB, -50 dB, -60 dB, -70 dB."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "A lower threshold allows the tail to continue farther into the decay."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "A higher threshold considers the tail finished earlier."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "-60 dB is the default threshold and is described by the interface as approximately 0.1% amplitude."; text_muted(40, 387, #str_tmp, 13);
+    #str_tmp = "Threshold is a practical cutoff, not absolute silence."; text_muted(40, 407, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Threshold визначає рівень, на якому калькулятор вважає хвіст практично завершеним."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Доступні значення: -40 dB, -50 dB, -60 dB, -70 dB."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Нижчий threshold дозволяє хвосту тривати далі."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Вищий threshold вважає хвіст завершеним раніше."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "-60 dB — значення за замовчуванням; інтерфейс описує його як приблизно 0.1% амплітуди."; text_muted(40, 387, #str_tmp, 13);
+    #str_tmp = "Threshold — практичний cutoff, а не абсолютна тиша."; text_muted(40, 407, #str_tmp, 13);
+    );
+  ) : help_scroll == 8 ? (
+    help_lang == 0 ? (#str_tmp = "9. DAMPING PROFILE") : (#str_tmp = "9. DAMPING PROFILE");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "DAMPING") : (#str_tmp = "DAMPING");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Ideal — ×1.00. No additional damping correction is applied."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Mild — ×0.85. Applies a moderate correction; the interface describes this as approximately a 15% tail reduction."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Strong — ×0.70. Applies a stronger correction; the interface describes this as approximately a 30% tail reduction."; text_muted(40, 207, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Ideal — ×1.00. Додаткова корекція damping не застосовується."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Mild — ×0.85. Помірна корекція; інтерфейс описує її як приблизно 15% скорочення хвоста."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Strong — ×0.70. Сильніша корекція; інтерфейс описує її як приблизно 30% скорочення хвоста."; text_muted(40, 207, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "IMPORTANT LIMITATION") : (#str_tmp = "ВАЖЛИВЕ ОБМЕЖЕННЯ");
+    text_left(40, 245, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Damping is explicitly a heuristic correction, not a physical model."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "It does not simulate frequency-dependent damping, filtering, diffusion, absorption or internal plugin behavior."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "Use the profiles as practical correction factors when you want a shorter estimated tail."; text_muted(40, 307, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Damping — це евристична поправка, а не фізична модель."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "Вона не симулює частотно-залежне damping, фільтрацію, дифузію, поглинання або поведінку конкретного процесора."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "Використовуйте профілі як практичні коефіцієнти, коли потрібен коротший розрахунковий хвіст."; text_muted(40, 307, #str_tmp, 13);
+    );
+  ) : help_scroll == 9 ? (
+    help_lang == 0 ? (#str_tmp = "10. UNIVERSAL FEEDBACK SCALES") : (#str_tmp = "10. УНІВЕРСАЛЬНІ ШКАЛИ FEEDBACK");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "FEEDBACK REPRESENTATIONS") : (#str_tmp = "ПРЕДСТАВЛЕННЯ FEEDBACK");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Standard %: conventional feedback percentage, 0–100%. Example: 50% = feedback factor 0.50."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Normalized: the same factor on a 0.00–1.00 scale. Example: 50% = 0.500."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Analog Dial: the same factor on a 0–10 scale. Example: 50% = 5.00."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Loop Gain (dB): the corresponding feedback gain in decibels."; text_muted(40, 227, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Standard %: звичайний відсоток feedback, 0–100%. Наприклад 50% = коефіцієнт 0.50."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Normalized: той самий коефіцієнт на шкалі 0.00–1.00. 50% = 0.500."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Analog Dial: той самий коефіцієнт на шкалі 0–10. 50% = 5.00."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Loop Gain (dB): відповідний feedback gain у децибелах."; text_muted(40, 227, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "IMPORTANT NOTE") : (#str_tmp = "ВАЖЛИВА ПРИМІТКА");
+    text_left(40, 265, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "These conversions describe the same theoretical feedback factor using different scales."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "They do not account for the individual knob taper of a specific analog emulation."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "For nonlinear or analog-style controls, treat the value as a theoretical reference, not the exact physical knob position."; text_muted(40, 327, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Ці перетворення описують той самий теоретичний feedback-рівень різними шкалами."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "Вони автоматично не враховують індивідуальну taper-криву ручки конкретної analog emulation."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Для нелінійних або analog-style контролів сприймайте значення як теоретичний орієнтир, а не як точну позицію фізичної ручки."; text_muted(40, 327, #str_tmp, 13);
+    );
+  ) : help_scroll == 10 ? (
+    help_lang == 0 ? (#str_tmp = "11. EXACT INPUT & PRACTICAL USE") : (#str_tmp = "11. ТОЧНЕ ВВЕДЕННЯ ТА ПРАКТИЧНЕ ВИКОРИСТАННЯ");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "ENTERING EXACT VALUES") : (#str_tmp = "ВВЕДЕННЯ ТОЧНИХ ЗНАЧЕНЬ");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "BPM: click the BPM field, type a number, and press Enter."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Delay Tail: click the relevant value field, type the number, and press Enter."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Time Signature: click numerator or denominator and enter the desired value."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Custom Converter: open Custom and enter the millisecond value."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "Press ESC to cancel an active edit."; text_muted(40, 247, #str_tmp, 13);
+    ) : (
+    #str_tmp = "BPM: натисніть поле BPM, введіть число та натисніть Enter."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Delay Tail: натисніть потрібне поле, введіть число та натисніть Enter."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Time Signature: натисніть чисельник або знаменник і введіть значення."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Custom Converter: відкрийте Custom і введіть значення в мс."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "ESC скасовує активне редагування."; text_muted(40, 247, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "TEMPO-SYNCED DELAY") : (#str_tmp = "DELAY СИНХРОНІЗОВАНИЙ З ТЕМПОМ");
+    text_left(40, 285, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "1. Enable Sync."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "2. Make sure the DAW is running at the desired project tempo."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "3. Open Note Durations."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "4. Choose the desired rhythmic value."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "5. Enter that value into the delay plugin."; text_muted(40, 387, #str_tmp, 13);
+    ) : (
+    #str_tmp = "1. Увімкніть Sync."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "2. Переконайтеся, що DAW працює з потрібним темпом."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "3. Відкрийте Note Durations."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "4. Виберіть потрібне ритмічне значення."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "5. Введіть це значення у delay-плагін."; text_muted(40, 387, #str_tmp, 13);
+    );
+  ) : help_scroll == 11 ? (
+    help_lang == 0 ? (#str_tmp = "12. PRACTICAL WORKFLOWS") : (#str_tmp = "12. ПРАКТИЧНІ WORKFLOW");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "MANUAL DELAY") : (#str_tmp = "MANUAL DELAY");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "1. Select Manual."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "2. Enter the BPM."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "3. Choose the required note value."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "4. Read the result in milliseconds."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "5. Enter the value into your delay plugin."; text_muted(40, 247, #str_tmp, 13);
+    ) : (
+    #str_tmp = "1. Виберіть Manual."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "2. Введіть BPM."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "3. Виберіть потрібне значення ноти."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "4. Прочитайте результат у мілісекундах."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "5. Введіть значення у delay-плагін."; text_muted(40, 247, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "TEMPO-BASED REVERB") : (#str_tmp = "РЕВЕРБ НА ОСНОВІ ТЕМПУ");
+    text_left(40, 285, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "1. Set the correct BPM."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "2. Set the correct time signature."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "3. Open Reverb Suggestions."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "4. Choose a room-size starting point."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "5. Use the calculated pre-delay and decay as starting values."; text_muted(40, 387, #str_tmp, 13);
+    #str_tmp = "6. Adjust the final reverb by ear."; text_muted(40, 407, #str_tmp, 13);
+    ) : (
+    #str_tmp = "1. Встановіть BPM."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "2. Встановіть розмір такту."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "3. Відкрийте Reverb Suggestions."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "4. Виберіть стартовий розмір приміщення."; text_muted(40, 367, #str_tmp, 13);
+    #str_tmp = "5. Використайте pre-delay і decay як стартові значення."; text_muted(40, 387, #str_tmp, 13);
+    #str_tmp = "6. Підкоригуйте фінальний reverb на слух."; text_muted(40, 407, #str_tmp, 13);
+    );
+  ) : help_scroll == 12 ? (
+    help_lang == 0 ? (#str_tmp = "13. DESIGNING A DELAY TAIL") : (#str_tmp = "13. НАЛАШТУВАННЯ DELAY TAIL");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "WORKFLOW") : (#str_tmp = "WORKFLOW");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "1. Open Delay Tail."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "2. Enter your delay time."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "3. Choose Feedback → Tail if feedback is already known."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "4. Choose Tail → Feedback if the desired tail length is already known."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "5. Select the threshold that represents the desired end point."; text_muted(40, 247, #str_tmp, 13);
+    #str_tmp = "6. Use damping only as a practical correction."; text_muted(40, 267, #str_tmp, 13);
+    ) : (
+    #str_tmp = "1. Відкрийте Delay Tail."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "2. Введіть delay time."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "3. Feedback → Tail, якщо feedback вже відомий."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "4. Tail → Feedback, якщо відома бажана довжина хвоста."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "5. Виберіть threshold, який відповідає бажаній точці завершення."; text_muted(40, 247, #str_tmp, 13);
+    #str_tmp = "6. Використовуйте damping лише як практичну поправку."; text_muted(40, 267, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "WHAT TO EXPECT") : (#str_tmp = "ЧОГО ОЧІКУВАТИ");
+    text_left(40, 305, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "The result is an estimate based on exponential decay and the selected threshold."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Actual audio can differ because real processors may have filters, modulation, saturation or other processing in the loop."; text_muted(40, 347, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Результат є оцінкою на основі експоненційного затухання та вибраного threshold."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Реальний звук може відрізнятися, бо процесор може мати фільтри, modulation, saturation, nonlinearities або іншу обробку у feedback loop."; text_muted(40, 347, #str_tmp, 13);
+    );
+  ) : help_scroll == 13 ? (
+    help_lang == 0 ? (#str_tmp = "14. WHAT THE CALCULATOR DOES NOT SIMULATE") : (#str_tmp = "14. ЧОГО КАЛЬКУЛЯТОР НЕ СИМУЛЮЄ");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "LIMITATIONS") : (#str_tmp = "ОБМЕЖЕННЯ");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "The calculator is a timing and estimation utility. It does not reproduce the complete internal behavior of a specific delay or reverb plugin."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Delay Tail does not model frequency-dependent feedback, filters in the loop, modulation, saturation or nonlinear processing."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Reverb Suggestions do not simulate room acoustics, absorption, diffusion, dimensions, materials or early reflections."; text_muted(40, 207, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Калькулятор є утилітою для таймінгу та оцінки. Він не відтворює всю внутрішню поведінку конкретного delay або reverb плагіна."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Delay Tail не моделює частотно-залежний feedback, фільтри в петлі, modulation, saturation або nonlinear processing."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Reverb Suggestions не симулює акустику кімнати, поглинання, дифузію, розміри, матеріали чи ранні відбиття."; text_muted(40, 207, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "INTERPRETATION") : (#str_tmp = "ІНТЕРПРЕТАЦІЯ");
+    text_left(40, 245, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Calculated values are musical starting points and estimates, not guaranteed measurements of a specific processor."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "Always compare the calculated result with the actual effect and adjust for musical context."; text_muted(40, 287, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Розраховані значення — це музичні стартові точки та оцінки, а не гарантовані вимірювання конкретного процесора."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "Завжди порівнюйте результат із реальним ефектом і коригуйте під музичний контекст."; text_muted(40, 287, #str_tmp, 13);
+    );
+  ) : help_scroll == 14 ? (
+    help_lang == 0 ? (#str_tmp = "15. THEMES & HELP") : (#str_tmp = "15. ТЕМИ ТА HELP");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "COLOR THEMES") : (#str_tmp = "КОЛЬОРОВІ ТЕМИ");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "The interface provides four visual themes: Charcoal, Emerald, Graphite, and Ocean."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Click the theme button in the top-right area to cycle through the available themes."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Changing the theme changes the visual appearance without changing calculations."; text_muted(40, 207, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Інтерфейс має чотири теми: Charcoal, Emerald, Graphite та Ocean."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Натискайте кнопку теми у верхньому правому куті для перемикання."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Зміна теми змінює лише вигляд і не впливає на розрахунки."; text_muted(40, 207, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "HELP WINDOW") : (#str_tmp = "ВІКНО HELP");
+    text_left(40, 245, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Press ? Help to open the built-in manual."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "The Help window contains English and Ukrainian versions of the manual."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "Use Prev / Next or the mouse wheel to change pages."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Press Close, click outside the Help window, or press ESC to exit."; text_muted(40, 327, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Натисніть ? Help, щоб відкрити вбудований мануал."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "У Help є повні версії українською та англійською."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "Prev / Next або коліщатко миші перемикають сторінки."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Close, клік поза вікном або ESC закривають Help."; text_muted(40, 327, #str_tmp, 13);
+    );
+  ) : help_scroll == 15 ? (
+    help_lang == 0 ? (#str_tmp = "16. QUICK REFERENCE") : (#str_tmp = "16. ШВИДКА ДОВІДКА");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "TEMPO & UNITS") : (#str_tmp = "ТЕМП І ОДИНИЦІ");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Manual — use your own BPM."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Sync — follow the host tempo and valid host time signature."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "ms — milliseconds.  s — seconds.  Hz — reciprocal frequency representation."; text_muted(40, 207, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Manual — використовуйте власний BPM."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Sync — слідуйте за темпом хоста та коректним host time signature."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "ms — мілісекунди. s — секунди. Hz — обернене представлення частоти."; text_muted(40, 207, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "TABS & TOOLS") : (#str_tmp = "ВКЛАДКИ ТА ІНСТРУМЕНТИ");
+    text_left(40, 245, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Reverb Suggestions — pre-delay, decay, and total reverb timing."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "Note Durations — normal, dotted, and triplet note values."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "Delay Tail — feedback, tail length, threshold, damping, and repeat estimates."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "TAP BPM — calculate BPM from repeated clicks."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Custom — find the closest musical value for an exact millisecond time."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Time Signature — set the meter used for bar calculations."; text_muted(40, 367, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Reverb Suggestions — pre-delay, decay та total reverb timing."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "Note Durations — normal, dotted і triplet значення нот."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "Delay Tail — feedback, довжина хвоста, threshold, damping та оцінка повторів."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "TAP BPM — визначення BPM за повторними натисканнями."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Custom — пошук найближчого музичного значення для точного часу в мс."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Time Signature — розмір такту для розрахунків у тактах."; text_muted(40, 367, #str_tmp, 13);
+    );
+  ) : help_scroll == 16 ? (
+    help_lang == 0 ? (#str_tmp = "17. RECOMMENDED WORKFLOW") : (#str_tmp = "17. РЕКОМЕНДОВАНИЙ WORKFLOW");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "START HERE") : (#str_tmp = "ПОЧАТОК");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "1. Set Tempo."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "2. Set Time Signature."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "3. Set Display Unit."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "4. Choose the calculation section you need."; text_muted(40, 227, #str_tmp, 13);
+    ) : (
+    #str_tmp = "1. Встановіть Tempo."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "2. Встановіть Time Signature."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "3. Встановіть Display Unit."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "4. Виберіть потрібний розділ калькулятора."; text_muted(40, 227, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "DAW vs STANDALONE") : (#str_tmp = "DAW vs STANDALONE");
+    text_left(40, 265, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "For DAW work, Sync mode follows the project tempo and time signature from the host."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "For standalone calculations or experiments, use Manual mode."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Calculated times are starting points. Adjust the final setting for musical context and the specific effect processor."; text_muted(40, 327, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Для DAW роботи Sync слідує за темпом і розміром такту проєкту, якщо хост їх надає."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "Для standalone-розрахунків або експериментів використовуйте Manual."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Розраховані часи — стартові значення. Фінальне налаштування залежить від музичного контексту та конкретного процесора."; text_muted(40, 327, #str_tmp, 13);
+    );
+  ) : help_scroll == 17 ? (
+    help_lang == 0 ? (#str_tmp = "18. FINAL NOTES") : (#str_tmp = "18. ФІНАЛЬНІ ПРИМІТКИ");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "USE THE RESULTS AS STARTING POINTS") : (#str_tmp = "ВИКОРИСТОВУЙТЕ ЯК СТАРТОВІ ЗНАЧЕННЯ");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "The calculator is designed to turn musical timing into practical numbers quickly."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "A mathematically synchronized value is not automatically the best-sounding value for every mix."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Use the calculated result, then listen to the actual processor and make the final adjustment."; text_muted(40, 207, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Калькулятор швидко перетворює музичний таймінг у практичні числа."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Математично синхронізоване значення не обов’язково є найкращим за звучанням для кожного міксу."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Використайте результат, послухайте реальний процесор і зробіть фінальну корекцію."; text_muted(40, 207, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "MANUAL SUMMARY") : (#str_tmp = "КОРОТКИЙ ПІДСУМОК");
+    text_left(40, 245, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Set BPM → set time signature → choose the required calculator → read the result → apply it to the effect → adjust by ear."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "For host-synced projects, enable Sync so the calculator follows the DAW when valid host information is available."; text_muted(40, 287, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Встановіть BPM → розмір такту → виберіть калькулятор → прочитайте результат → застосуйте до ефекту → підкоригуйте на слух."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "Для host-synced проєктів увімкніть Sync, щоб калькулятор слідував за DAW, коли хост надає коректну інформацію."; text_muted(40, 287, #str_tmp, 13);
+    );
+  ) : help_scroll == 18 ? (
+    help_lang == 0 ? (#str_tmp = "19. VERSION / SCOPE") : (#str_tmp = "19. ОБСЯГ І ПРИЗНАЧЕННЯ");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "CURRENT HELP SCOPE") : (#str_tmp = "ОБСЯГ ЦЬОГО HELP");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "This built-in manual documents the controls and calculation concepts exposed by the current plugin interface."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "The calculations are intended for timing, musical synchronization, and practical estimation."; text_muted(40, 187, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Цей вбудований мануал описує контролі та концепції розрахунків, доступні у поточному інтерфейсі плагіна."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Розрахунки призначені для таймінгу, музичної синхронізації та практичної оцінки."; text_muted(40, 187, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "REFERENCE") : (#str_tmp = "ПРИМІТКА");
+    text_left(40, 225, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "The exact behavior of a third-party delay, reverb, modulation, or analog emulation may differ from the theoretical values shown here."; text_muted(40, 247, #str_tmp, 13);
+    #str_tmp = "When in doubt, verify the result against the actual processor and the project context."; text_muted(40, 267, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Точна поведінка стороннього delay, reverb, modulation або analog emulation може відрізнятися від теоретичних значень."; text_muted(40, 247, #str_tmp, 13);
+    #str_tmp = "Якщо є сумнів, перевірте результат на реальному процесорі та в контексті проєкту."; text_muted(40, 267, #str_tmp, 13);
+    );
+  ) : help_scroll == 19 ? (
+    help_lang == 0 ? (#str_tmp = "20. QUICK START") : (#str_tmp = "20. ШВИДКИЙ СТАРТ");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "FASTEST WORKFLOW") : (#str_tmp = "НАЙШВИДШИЙ WORKFLOW");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "1. Enable Sync if working in a DAW."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "2. Confirm BPM and time signature."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "3. Open Note Durations for a tempo-synced delay."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "4. Open Reverb Suggestions for a starting reverb timing."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "5. Open Delay Tail when you need a feedback/tail estimate."; text_muted(40, 247, #str_tmp, 13);
+    #str_tmp = "6. Use Custom when you already know an exact millisecond value."; text_muted(40, 267, #str_tmp, 13);
+    ) : (
+    #str_tmp = "1. Увімкніть Sync, якщо працюєте в DAW."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "2. Перевірте BPM і розмір такту."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "3. Відкрийте Note Durations для tempo-synced delay."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "4. Відкрийте Reverb Suggestions для стартового таймінгу ревербу."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "5. Відкрийте Delay Tail для оцінки feedback/tail."; text_muted(40, 247, #str_tmp, 13);
+    #str_tmp = "6. Використовуйте Custom, якщо вже знаєте точний час у мс."; text_muted(40, 267, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "DONE") : (#str_tmp = "ГОТОВО");
+    text_left(40, 305, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "The calculator is ready to provide the timing reference."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Use the navigation below to return to any section of the manual."; text_muted(40, 347, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Калькулятор готовий надати таймінговий орієнтир."; text_muted(40, 327, #str_tmp, 13);
+    #str_tmp = "Використовуйте навігацію нижче, щоб повернутися до будь-якого розділу мануалу."; text_muted(40, 347, #str_tmp, 13);
+    );
+  ) : help_scroll == 20 ? (
+    help_lang == 0 ? (#str_tmp = "21. KEYBOARD & NAVIGATION") : (#str_tmp = "21. КЛАВІАТУРА ТА НАВІГАЦІЯ");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "KEYBOARD") : (#str_tmp = "КЛАВІАТУРА");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Enter confirms a numeric value."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Backspace deletes the last digit while editing."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "ESC cancels an active edit or closes the Help window."; text_muted(40, 207, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Enter підтверджує числове значення."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Backspace видаляє останню цифру під час редагування."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "ESC скасовує активне редагування або закриває Help."; text_muted(40, 207, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "HELP NAVIGATION") : (#str_tmp = "НАВІГАЦІЯ HELP");
+    text_left(40, 245, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Prev and Next move between manual pages."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "The mouse wheel also changes Help pages."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "The EN | UA button switches the language without changing calculations."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Close, outside click, or ESC exits Help."; text_muted(40, 327, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Prev і Next перемикають сторінки мануалу."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "Коліщатко миші також перемикає сторінки Help."; text_muted(40, 287, #str_tmp, 13);
+    #str_tmp = "Кнопка EN | UA перемикає мову без зміни розрахунків."; text_muted(40, 307, #str_tmp, 13);
+    #str_tmp = "Close, клік поза вікном або ESC закривають Help."; text_muted(40, 327, #str_tmp, 13);
+    );
+  ) : help_scroll == 21 ? (
+    help_lang == 0 ? (#str_tmp = "22. COMPLETE SUMMARY") : (#str_tmp = "22. ПОВНИЙ ПІДСУМОК");
+    text_left(40, 105, #str_tmp, 16);
+    help_lang == 0 ? (#str_tmp = "WHAT THIS PLUGIN PROVIDES") : (#str_tmp = "ЩО ДАЄ ЦЕЙ ПЛАГІН");
+    text_left(40, 145, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Tempo-based delay and reverb timing calculations."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Manual or host-synchronized BPM and time signature."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Normal, dotted, and triplet note values."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Custom millisecond-to-note conversion."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "Reverb timing suggestions for multiple room-size categories."; text_muted(40, 247, #str_tmp, 13);
+    #str_tmp = "Delay feedback/tail estimation with threshold and heuristic damping."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "Multiple feedback representations and visual themes."; text_muted(40, 287, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Розрахунок delay/reverb таймінгу на основі темпу."; text_muted(40, 167, #str_tmp, 13);
+    #str_tmp = "Manual або host-synced BPM і time signature."; text_muted(40, 187, #str_tmp, 13);
+    #str_tmp = "Normal, dotted та triplet значення нот."; text_muted(40, 207, #str_tmp, 13);
+    #str_tmp = "Конвертація точних мілісекунд у найближче музичне значення."; text_muted(40, 227, #str_tmp, 13);
+    #str_tmp = "Таймінгові рекомендації для ревербу з кількома категоріями розміру."; text_muted(40, 247, #str_tmp, 13);
+    #str_tmp = "Оцінка feedback/tail із threshold та евристичним damping."; text_muted(40, 267, #str_tmp, 13);
+    #str_tmp = "Кілька представлень feedback і візуальні теми."; text_muted(40, 287, #str_tmp, 13);
+    );
+    help_lang == 0 ? (#str_tmp = "FINAL REMINDER") : (#str_tmp = "ФІНАЛЬНЕ НАГАДУВАННЯ");
+    text_left(40, 325, #str_tmp, 16);
+    help_lang == 0 ? (
+    #str_tmp = "Use the calculator as a musical timing reference and estimation tool."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "The final audio result depends on the actual effect processor, its settings, and the musical context."; text_muted(40, 367, #str_tmp, 13);
+    ) : (
+    #str_tmp = "Використовуйте калькулятор як музичний таймінговий орієнтир та інструмент оцінки."; text_muted(40, 347, #str_tmp, 13);
+    #str_tmp = "Фінальний результат залежить від реального процесора, його налаштувань і музичного контексту."; text_muted(40, 367, #str_tmp, 13);
+    );
+  );
+  help_scroll > 0 ? (gfx_r = panel_r*1.5; gfx_g = panel_g*1.5; gfx_b = panel_b*1.5;) : (gfx_r = panel_r; gfx_g = panel_g; gfx_b = panel_b;); gfx_a = 1; draw_rrect(35, 585, 90, 35, 6); #str_tmp = "< Prev"; text_center(35, 585, 90, 35, #str_tmp, 11);
+  sprintf(#str_tmp, "PAGE %d / 22", help_scroll + 1); text_center_c(125, 585, 535, 35, #str_tmp, 10, muted_r, muted_g, muted_b);
+  help_scroll < 21 ? (gfx_r = panel_r*1.5; gfx_g = panel_g*1.5; gfx_b = panel_b*1.5;) : (gfx_r = panel_r; gfx_g = panel_g; gfx_b = panel_b;); gfx_a = 1; draw_rrect(655, 585, 95, 35, 6); #str_tmp = "Next >"; text_center(655, 585, 95, 35, #str_tmp, 11);
+  help_lang == 0 ? (#str_tmp = "Mouse wheel = page  |  ESC = close") : (#str_tmp = "Коліщатко = сторінка  |  ESC = закрити"); text_center_c(125, 620, 535, 12, #str_tmp, 9, muted_r, muted_g, muted_b);
+);
+
+show_help ? (
+  key = gfx_getchar();
+  while (key > 0) (
+    key == 27 ? (show_help = 0;);
+    key = gfx_getchar();
+  );
+) : edit_bpm && !sync_mode && !show_ts_menu && !show_custom_menu ? (
+  key = gfx_getchar();
+  while (key > 0) (
+    key >= 48 && key <= 57 ? (
+      strlen(#bpm_string) < 6 ? (
+        strcpy_substr(#digit, "0123456789", key-48, 1);
+        strcat(#bpm_string, #digit);
+      );
+    );
+    key == 46 ? (
+      strlen(#bpm_string) > 0 && strlen(#bpm_string) < 6 ? (
+        match("*.*", #bpm_string) == 0 ? strcat(#bpm_string, ".");
+      );
+    );
+    key == 8 ? (
+      strlen(#bpm_string) > 0 ? (
+        strcpy_substr(#tmp, #bpm_string, 0, strlen(#bpm_string)-1);
+        strcpy(#bpm_string, #tmp);
+      );
+    );
+    key == 13 ? (
+      strlen(#bpm_string) > 0 ? (
+        parsed_bpm = 0;
+        match("%f", #bpm_string, parsed_bpm);
+        parsed_bpm < 20 ? parsed_bpm = 20;
+        parsed_bpm > 300 ? parsed_bpm = 300;
+        manual_bpm = parsed_bpm;
+        bpm = parsed_bpm;
+        slider1 = parsed_bpm;
+      );
+      edit_bpm = 0;
+      strcpy(#bpm_string, "");
+    );
+    key == 27 ? (edit_bpm = 0; strcpy(#bpm_string, ""););
+    key = gfx_getchar();
+  );
+);
+
+fb_edit_field > 0 && active_tab == 2 && !show_ts_menu && !show_custom_menu && !show_help ? (
+  key = gfx_getchar();
+  while (key > 0) (
+    key >= 48 && key <= 57 ? (
+      strlen(#fb_buf) < 8 ? (
+        strcpy_substr(#digit, "0123456789", key-48, 1);
+        strcat(#fb_buf, #digit);
+      );
+    );
+    key == 46 ? (
+      strlen(#fb_buf) > 0 && strlen(#fb_buf) < 8 ? (
+        match("*.*", #fb_buf) == 0 ? strcat(#fb_buf, ".");
+      );
+    );
+    key == 8 ? (
+      strlen(#fb_buf) > 0 ? (
+        strcpy_substr(#fb_tmp, #fb_buf, 0, strlen(#fb_buf)-1);
+        strcpy(#fb_buf, #fb_tmp);
+      );
+    );
+    key == 13 ? (
+      strlen(#fb_buf) > 0 ? (
+        parsed = 0;
+        match("%f", #fb_buf, parsed);
+        fb_edit_field == 1 ? (parsed < 1 ? parsed = 1; parsed > 10000 ? parsed = 10000; fb_delay_ms = parsed;);
+        fb_edit_field == 2 ? (parsed < 0.1 ? parsed = 0.1; parsed > 99.9 ? parsed = 99.9; fb_feedback_pct = parsed;);
+        fb_edit_field == 3 ? (parsed < 0.01 ? parsed = 0.01; parsed > 600 ? parsed = 600; fb_tail_target = parsed;);
+      );
+      fb_edit_field = 0;
+      strcpy(#fb_buf, "");
+    );
+    key == 27 ? (fb_edit_field = 0; strcpy(#fb_buf, ""););
+    key = gfx_getchar();
+  );
+);
+
+show_custom_menu ? (
+  key = gfx_getchar();
+  while (key > 0) (
+    key >= 48 && key <= 57 ? (
+      strlen(#custom_string) < 5 ? (
+        strcpy_substr(#custom_digit, "0123456789", key-48, 1);
+        strcat(#custom_string, #custom_digit);
+      );
+    );
+    key == 46 ? (
+      strlen(#custom_string) > 0 && strlen(#custom_string) < 5 ? (
+        match("*.*", #custom_string) == 0 ? strcat(#custom_string, ".");
+      );
+    );
+    key == 8 ? (
+      strlen(#custom_string) > 0 ? (
+        strcpy_substr(#custom_tmp, #custom_string, 0, strlen(#custom_string)-1);
+        strcpy(#custom_string, #custom_tmp);
+      );
+    );
+    key == 13 ? (show_custom_menu = 0;);
+    key == 27 ? (show_custom_menu = 0; strcpy(#custom_string, ""););
+    key = gfx_getchar();
+  );
+);
+
+show_ts_menu && edit_ts > 0 && !sync_mode ? (
+  key = gfx_getchar();
+  while (key > 0) (
+    key >= 48 && key <= 57 ? (
+      edit_ts == 1 && strlen(#ts_num_str) < 2 ? (
+        strcpy_substr(#ts_num_digit, "0123456789", key-48, 1);
+        strcat(#ts_num_str, #ts_num_digit);
+      );
+      edit_ts == 2 && strlen(#ts_den_str) < 2 ? (
+        strcpy_substr(#ts_den_digit, "0123456789", key-48, 1);
+        strcat(#ts_den_str, #ts_den_digit);
+      );
+    );
+    key == 8 ? (
+      edit_ts == 1 && strlen(#ts_num_str) > 0 ? (
+        strcpy_substr(#ts_num_tmp, #ts_num_str, 0, strlen(#ts_num_str)-1);
+        strcpy(#ts_num_str, #ts_num_tmp);
+      );
+      edit_ts == 2 && strlen(#ts_den_str) > 0 ? (
+        strcpy_substr(#ts_den_tmp, #ts_den_str, 0, strlen(#ts_den_str)-1);
+        strcpy(#ts_den_str, #ts_den_tmp);
+      );
+    );
+    key == 13 ? (
+      edit_ts == 1 ? (
+        strlen(#ts_num_str) > 0 ? (
+          parsed_ts = 0;
+          match("%d", #ts_num_str, parsed_ts);
+          parsed_ts < 1 ? parsed_ts = 1;
+          parsed_ts > 16 ? parsed_ts = 16;
+          manual_ts_num = parsed_ts;
+          cur_ts_num = parsed_ts;
+          slider8 = parsed_ts;
+          strcpy(#ts_num_str, "");
+        );
+        edit_ts = 0;
+        show_ts_menu = 0;
+      ) : edit_ts == 2 ? (
+        strlen(#ts_den_str) > 0 ? (
+          parsed_ts = 0;
+          match("%d", #ts_den_str, parsed_ts);
+          parsed_ts < 1 ? parsed_ts = 1;
+          parsed_ts > 16 ? parsed_ts = 16;
+          manual_ts_den = parsed_ts;
+          cur_ts_den = parsed_ts;
+          slider9 = parsed_ts;
+          strcpy(#ts_den_str, "");
+        );
+        edit_ts = 0;
+        show_ts_menu = 0;
+      ) : (
+        edit_ts = 0;
+        show_ts_menu = 0;
+      );
+    );
+    key == 27 ? (
+      edit_ts = 0;
+      strcpy(#ts_num_str, "");
+      strcpy(#ts_den_str, "");
+      show_ts_menu = 0;
+    );
+    key = gfx_getchar();
+  );
+) : show_ts_menu && edit_ts == 0 ? (
+  key = gfx_getchar();
+  while (key > 0) (
+    (key == 13 || key == 27) ? (show_ts_menu = 0;);
+    key = gfx_getchar();
+  );
+);
+
+show_ts_menu ? (
+  gfx_a = 0.7; gfx_r = 0; gfx_g = 0; gfx_b = 0;
+  gfx_rect(0, 0, gfx_w, gfx_h, 1);
+  gfx_a = 1;
+  panel(195, 160, 395, 400);
+  #str_tmp = "TIME SIGNATURE"; text_center(195, 168, 395, 26, #str_tmp, 16);
+
+  gfx_a = 0.4; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+  gfx_rect(floor(offset_x+215*scale), floor(offset_y+212*scale), floor(355*scale), 1, 1);
+  gfx_a = 1;
+
+  edit_ts == 1 ? (gfx_r = panel_r*1.1; gfx_g = panel_g*1.1; gfx_b = panel_b*1.1;) : (gfx_r = panel_r*1.5; gfx_g = panel_g*1.5; gfx_b = panel_b*1.5;);
+  gfx_a = 1; draw_rrect(275, 228, 95, 65, 8);
+  gfx_r = 1; gfx_g = 1; gfx_b = 1; gfx_a = 0.06;
+  gfx_rect(floor(offset_x+281*scale), floor(offset_y+229*scale), floor(83*scale), 1, 1);
+  gfx_a = 1;
+
+  edit_ts == 1 ? (
+    gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+    gfx_rect(floor(offset_x+275*scale), floor(offset_y+228*scale), floor(95*scale), 1, 1);
+    gfx_rect(floor(offset_x+275*scale), floor(offset_y+292*scale), floor(95*scale), 1, 1);
+    gfx_rect(floor(offset_x+275*scale), floor(offset_y+228*scale), 1, floor(65*scale), 1);
+    gfx_rect(floor(offset_x+369*scale), floor(offset_y+228*scale), 1, floor(65*scale), 1);
+  );
+
+  set_font(32); gfx_a = 1;
+  edit_ts == 1 && strlen(#ts_num_str) > 0 ? (
+    gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+    gfx_measurestr(#ts_num_str, tw, th);
+    gfx_x = floor(offset_x+322*scale - tw/2);
+    gfx_y = floor(offset_y+260*scale - th/2);
+    gfx_drawstr(#ts_num_str);
+  );
+  edit_ts == 1 && strlen(#ts_num_str) == 0 ? (
+    cur_on = ((floor(time_precise()*2)) % 2) == 0;
+    cur_on ? (
+      gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+      gfx_rect(floor(offset_x+321*scale), floor(offset_y+243*scale), 2, floor(35*scale), 1);
+    );
+  );
+  edit_ts != 1 ? (
+    gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+    sprintf(#ts, "%d", cur_ts_num);
+    gfx_measurestr(#ts, tw, th);
+    gfx_x = floor(offset_x+322*scale - tw/2);
+    gfx_y = floor(offset_y+260*scale - th/2);
+    gfx_drawstr(#ts);
+  );
+
+  #str_tmp = "/"; text_center_c(370, 228, 45, 65, #str_tmp, 32, text_r, text_g, text_b);
+
+  edit_ts == 2 ? (gfx_r = panel_r*1.1; gfx_g = panel_g*1.1; gfx_b = panel_b*1.1;) : (gfx_r = panel_r*1.5; gfx_g = panel_g*1.5; gfx_b = panel_b*1.5;);
+  gfx_a = 1; draw_rrect(415, 228, 95, 65, 8);
+  gfx_r = 1; gfx_g = 1; gfx_b = 1; gfx_a = 0.06;
+  gfx_rect(floor(offset_x+421*scale), floor(offset_y+229*scale), floor(83*scale), 1, 1);
+  gfx_a = 1;
+
+  edit_ts == 2 ? (
+    gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+    gfx_rect(floor(offset_x+415*scale), floor(offset_y+228*scale), floor(95*scale), 1, 1);
+    gfx_rect(floor(offset_x+415*scale), floor(offset_y+292*scale), floor(95*scale), 1, 1);
+    gfx_rect(floor(offset_x+415*scale), floor(offset_y+228*scale), 1, floor(65*scale), 1);
+    gfx_rect(floor(offset_x+509*scale), floor(offset_y+228*scale), 1, floor(65*scale), 1);
+  );
+
+  set_font(32); gfx_a = 1;
+  edit_ts == 2 && strlen(#ts_den_str) > 0 ? (
+    gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+    gfx_measurestr(#ts_den_str, tw, th);
+    gfx_x = floor(offset_x+462*scale - tw/2);
+    gfx_y = floor(offset_y+260*scale - th/2);
+    gfx_drawstr(#ts_den_str);
+  );
+  edit_ts == 2 && strlen(#ts_den_str) == 0 ? (
+    cur_on = ((floor(time_precise()*2)) % 2) == 0;
+    cur_on ? (
+      gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+      gfx_rect(floor(offset_x+461*scale), floor(offset_y+243*scale), 2, floor(35*scale), 1);
+    );
+  );
+  edit_ts != 2 ? (
+    gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+    sprintf(#ts, "%d", cur_ts_den);
+    gfx_measurestr(#ts, tw, th);
+    gfx_x = floor(offset_x+462*scale - tw/2);
+    gfx_y = floor(offset_y+260*scale - th/2);
+    gfx_drawstr(#ts);
+  );
+
+  bar_q_info = cur_ts_num*4/cur_ts_den;
+  sprintf(#ts_info, "= %.2f quarter notes per bar", bar_q_info);
+  sync_mode ? (
+    #str_tmp = "SYNC: size follows host";
+    text_center_c(195, 305, 395, 20, #str_tmp, 12, accent_hi_r, accent_hi_g, accent_b_hi);
+  ) : (
+    text_center(195, 305, 395, 20, #ts_info, 12);
+  );
+
+  gfx_a = 0.4; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+  gfx_rect(floor(offset_x+215*scale), floor(offset_y+332*scale), floor(355*scale), 1, 1);
+  gfx_a = 1;
+
+  #str_tmp = "QUICK PRESETS"; text_center(195, 340, 395, 18, #str_tmp, 11);
+  #str_tmp = "March";        ts_preset_btn(200, 368, 90, 54, 2,  4, #str_tmp, cur_ts_num == 2  && cur_ts_den == 4);
+  #str_tmp = "Waltz";        ts_preset_btn(295, 368, 90, 54, 3,  4, #str_tmp, cur_ts_num == 3  && cur_ts_den == 4);
+  #str_tmp = "Common";       ts_preset_btn(390, 368, 90, 54, 4,  4, #str_tmp, cur_ts_num == 4  && cur_ts_den == 4);
+  #str_tmp = "Five Four";    ts_preset_btn(485, 368, 90, 54, 5,  4, #str_tmp, cur_ts_num == 5  && cur_ts_den == 4);
+  #str_tmp = "Six Eight";    ts_preset_btn(200, 432, 90, 54, 6,  8, #str_tmp, cur_ts_num == 6  && cur_ts_den == 8);
+  #str_tmp = "Seven Eight";  ts_preset_btn(295, 432, 90, 54, 7,  8, #str_tmp, cur_ts_num == 7  && cur_ts_den == 8);
+  #str_tmp = "Nine Eight";   ts_preset_btn(390, 432, 90, 54, 9,  8, #str_tmp, cur_ts_num == 9  && cur_ts_den == 8);
+  #str_tmp = "Twelve Eight"; ts_preset_btn(485, 432, 90, 54, 12, 8, #str_tmp, cur_ts_num == 12 && cur_ts_den == 8);
+
+  gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+  set_font(10);
+  gfx_measurestr("ENTER to close  -  ESC to cancel", tw, th);
+  gfx_x = floor(offset_x+(195+395/2)*scale - tw/2);
+  gfx_y = floor(offset_y+538*scale);
+  gfx_drawstr("ENTER to close  -  ESC to cancel");
+);
+
+show_custom_menu ? (
+  gfx_a = 0.7; gfx_r = 0; gfx_g = 0; gfx_b = 0;
+  gfx_rect(0, 0, gfx_w, gfx_h, 1);
+  gfx_a = 1;
+  panel(182, 160, 420, 470);
+  #str_tmp = "CUSTOM CONVERTER"; text_center(182, 175, 420, 30, #str_tmp, 14);
+
+  gfx_a = 0.4; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+  gfx_rect(floor(offset_x+212*scale), floor(offset_y+208*scale), floor(360*scale), 1, 1);
+  gfx_a = 1;
+
+  gfx_a = 0.3; gfx_r = 0; gfx_g = 0; gfx_b = 0; draw_rrect(212, 220, 360, 55, 8);
+  gfx_a = 1; gfx_r = panel_r*1.2; gfx_g = panel_g*1.2; gfx_b = panel_b*1.2; draw_rrect(212, 222, 360, 51, 8);
+
+  strlen(#custom_string) > 0 ? (
+    gfx_a = 1; gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+    set_font(24); gfx_x = floor(offset_x+232*scale); gfx_y = floor(offset_y+234*scale);
+    gfx_drawstr(#custom_string);
+    gfx_measurestr(#custom_string, tw, th);
+    cur_on = ((floor(time_precise()*2)) % 2) == 0;
+    cur_on ? (
+      gfx_a = 1; gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+      gfx_rect(floor(offset_x+232*scale+tw+2*scale), floor(offset_y+234*scale), 2, floor(28*scale), 1);
+    );
+  ) : (
+    gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+    set_font(24); gfx_x = floor(offset_x+232*scale); gfx_y = floor(offset_y+234*scale);
+    gfx_drawstr("_ _ _");
+  );
+
+  gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+  set_font(16); gfx_x = floor(offset_x+532*scale); gfx_y = floor(offset_y+240*scale);
+  gfx_drawstr("ms");
+
+  custom_ms = 0;
+  strlen(#custom_string) > 0 ? match("%f", #custom_string, custom_ms);
+
+  custom_ms > 0.5 && custom_ms < 10000 ? (
+    find_best_note(custom_ms);
+    build_note_name(fbn_best_row, fbn_best_col);
+
+    gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+    set_font(11); gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+290*scale);
+    gfx_drawstr("CLOSEST MATCH");
+
+    gfx_a = 1; gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+    set_font(22); gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+312*scale);
+    gfx_drawstr(#note_name);
+
+    sprintf(#out, "%.2f ms @ %.2f BPM", fbn_best_ms, bpm);
+    gfx_a = 1; gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+    set_font(13); gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+348*scale);
+    gfx_drawstr(#out);
+
+    err_pct = (custom_ms - fbn_best_ms) / fbn_best_ms * 100;
+    abs(err_pct) < 0.05 ? (
+      sprintf(#out, "Error: 0.0%%  exact match");
+    ) : (
+      err_pct > 0 ? sprintf(#out, "Error: +%.1f%% (your value is longer)", err_pct) :
+                    sprintf(#out, "Error: %.1f%% (your value is shorter)", err_pct);
+    );
+    gfx_a = 1; gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+    set_font(13); gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+370*scale);
+    gfx_drawstr(#out);
+
+    gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+    set_font(11); gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+398*scale);
+    gfx_drawstr("EXACT BPM FOR THIS NOTE VALUE");
+
+    exact_bpm = 60000 * fbn_best_mult / custom_ms;
+    sprintf(#out, "%.2f", exact_bpm);
+    gfx_a = 1; gfx_r = accent_hi_r; gfx_g = accent_hi_g; gfx_b = accent_b_hi;
+    set_font(22); gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+416*scale);
+    gfx_drawstr(#out);
+
+    gfx_a = 0.4; gfx_r = line_r; gfx_g = line_g; gfx_b = line_b;
+    gfx_rect(floor(offset_x+212*scale), floor(offset_y+450*scale), floor(360*scale), 1, 1);
+    gfx_a = 1;
+
+    gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+    set_font(11); gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+460*scale);
+    gfx_drawstr("EFFECT TIME");
+
+    gfx_a = 1; gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+    set_font(13); gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+476*scale);
+    gfx_drawstr(#note_name);
+    gfx_measurestr(#note_name, tw1, th1);
+    gfx_x = floor(offset_x+212*scale + tw1);
+    gfx_drawstr(" @ ");
+    gfx_measurestr(" @ ", tw2, th2);
+    gfx_x = floor(offset_x+212*scale + tw1 + tw2);
+    sprintf(#out, "%.2f BPM", bpm);
+    gfx_drawstr(#out);
+
+    gfx_a = 1; gfx_r = accent_r; gfx_g = accent_g; gfx_b = accent_b;
+    set_font(22); gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+494*scale);
+    sprintf(#out, "%.2f ms", fbn_best_ms);
+    gfx_drawstr(#out);
+
+    gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+    set_font(11); gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+526*scale);
+    gfx_drawstr("Useful for:");
+
+    gfx_a = 1; gfx_r = text_r; gfx_g = text_g; gfx_b = text_b;
+    set_font(12); gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+545*scale);
+    gfx_drawstr("Reverb Tail / Decay (suggested)");
+    sprintf(#out, "%.2f ms", fbn_best_ms*4);
+    gfx_measurestr(#out, tw, th);
+    gfx_x = floor(offset_x+560*scale - tw);
+    gfx_drawstr(#out);
+
+    gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+562*scale);
+    gfx_drawstr("Delay Time");
+    sprintf(#out, "%.2f ms", fbn_best_ms);
+    gfx_measurestr(#out, tw, th);
+    gfx_x = floor(offset_x+560*scale - tw);
+    gfx_drawstr(#out);
+
+    gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+579*scale);
+    gfx_drawstr("Ducking Release (suggested)");
+    sprintf(#out, "%.2f ms", fbn_best_ms*2);
+    gfx_measurestr(#out, tw, th);
+    gfx_x = floor(offset_x+560*scale - tw);
+    gfx_drawstr(#out);
+  ) : (
+    gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+    set_font(14); gfx_x = floor(offset_x+212*scale); gfx_y = floor(offset_y+310*scale);
+    gfx_drawstr("Type a value in milliseconds...");
+  );
+
+  gfx_a = 1; gfx_r = muted_r; gfx_g = muted_g; gfx_b = muted_b;
+  set_font(10);
+  gfx_measurestr("ENTER to close  -  ESC to cancel", tw, th);
+  gfx_x = floor(offset_x+(182+420/2)*scale - tw/2);
+  gfx_y = floor(offset_y+608*scale);
+  gfx_drawstr("ENTER to close  -  ESC to cancel");
+);
