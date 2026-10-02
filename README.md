@@ -2,7 +2,7 @@
 <img width="785" height="715" alt="notes" src="https://github.com/user-attachments/assets/d3c7ca8a-c2f4-45c1-9327-02fbd9f9a297" />
 <img width="782" height="715" alt="timesig" src="https://github.com/user-attachments/assets/3533149e-3feb-4dc7-8224-1f9aae0d65db" />
 <img width="781" height="719" alt="delay tail" src="https://github.com/user-attachments/assets/94f87ceb-d28f-4e75-b584-dcff4966eae6" />
-    # Delay & Reverb Calculator Pro v1.0
+     # Delay & Reverb Calculator Pro v1.0
 
 Tempo-based JSFX calculator for delay, reverb and FX timing in REAPER.
 
