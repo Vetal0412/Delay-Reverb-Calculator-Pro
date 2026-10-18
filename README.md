@@ -27,8 +27,6 @@ Tempo-based JSFX calculator for delay, reverb and FX timing in REAPER.
    or simply restart REAPER
 4. Find it under: **JS: Delay & Reverb Calculator Pro v1.0**
 
-## Support
-
 ## ☕ Support
 
 This plugin is free.
