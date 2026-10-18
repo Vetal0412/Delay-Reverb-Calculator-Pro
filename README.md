@@ -29,11 +29,15 @@ Tempo-based JSFX calculator for delay, reverb and FX timing in REAPER.
 
 ## Support
 
+## ☕ Support
+
 This plugin is free.
 
 If it saves you time and you want to support further development (coffee / REAPER license fund):
 
-**[Buy me a coffee](https://ko-fi.com/vitaliisound)**
+* [Buy me a coffee](https://ko-fi.com/vitaliisound)
+* ⚠️ **Direct PayPal:** Due to regional restrictions, payments via the Ko-fi button may fail. If you'd like to support directly, you can send via PayPal to: **`k_1tv@ukr.net`** *(please select "Friends & Family")*.
+
 
 ## Version
 
