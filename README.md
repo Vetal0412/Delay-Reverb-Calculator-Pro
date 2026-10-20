@@ -5,7 +5,8 @@
 
 # Delay & Reverb Calculator Pro v1.0
 
-Tempo-based JSFX calculator for delay, reverb and FX timing in REAPER.
+Tempo-based calculator for delay, reverb and FX timing in REAPER.  
+Available in **JSFX** and **Lua** versions.
 
 ## Features
 
@@ -20,12 +21,19 @@ Tempo-based JSFX calculator for delay, reverb and FX timing in REAPER.
 
 ## Installation
 
+### JSFX version
 1. Download the `.jsfx` file
 2. Place it in your REAPER `Effects` folder  
    (or any subfolder inside it)
 3. In REAPER: **Actions → Show action list → Scan for new plugins**  
    or simply restart REAPER
 4. Find it under: **JS: Delay & Reverb Calculator Pro v1.0**
+
+### Lua version
+1. Download the `.lua` file
+2. Place it in your REAPER `Scripts` folder
+3. In REAPER: **Actions → Show action list → Load** → select the script
+4. (Optional) Add it to a toolbar or assign a shortcut
 
 ## ☕ Support
 
@@ -36,7 +44,6 @@ If it saves you time and you want to support further development (coffee / REAPE
 * [Buy me a coffee](https://ko-fi.com/vitaliisound)
 * ⚠️ **Direct PayPal:** Due to regional restrictions, payments via the Ko-fi button may fail. If you'd like to support directly, you can send via PayPal to: **`k_1tv@ukr.net`** *(please select "Friends & Family")*.
 
-
 ## Version
 
-**v1.0** — Initial release
+**v1.0** — Initial release (JSFX + Lua)
